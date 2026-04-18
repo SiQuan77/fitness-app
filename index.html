@@ -25,18 +25,9 @@
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
+    html, body { height: 100%; overflow: hidden; }
 
     body {
       font-family: "SF Pro Display", -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
@@ -47,1064 +38,406 @@
       touch-action: manipulation;
     }
 
-    .app {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-      position: relative;
-    }
+    .app { display: flex; flex-direction: column; height: 100%; max-width: 480px; margin: 0 auto; position: relative; }
 
-    /* Pages */
-    .page {
-      display: none;
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 16px;
-      padding-bottom: calc(80px + var(--safe-bottom));
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .page.active {
-      display: flex;
-      flex-direction: column;
-      animation: slideIn 200ms ease-out;
-    }
+    .page { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px; padding-bottom: calc(80px + var(--safe-bottom)); -webkit-overflow-scrolling: touch; }
+    .page.active { display: flex; flex-direction: column; animation: slideIn 200ms ease-out; }
 
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(20px); }
       to { opacity: 1; transform: translateX(0); }
     }
 
+    /* Lock Screen */
+    .lock-screen {
+      position: fixed; inset: 0; background: var(--bg-primary);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 999; padding: 20px;
+    }
+    .lock-screen.hidden { display: none; }
+    .lock-icon { font-size: 64px; margin-bottom: 24px; }
+    .lock-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; text-align: center; }
+    .lock-subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; text-align: center; }
+
+    .auth-tabs { display: flex; gap: 8px; margin-bottom: 24px; width: 100%; max-width: 300px; }
+    .auth-tab {
+      flex: 1; padding: 12px; border-radius: 10px; background: var(--bg-card);
+      border: 1px solid var(--border); color: var(--text-secondary); font-size: 14px;
+      cursor: pointer; transition: all 150ms; text-align: center;
+    }
+    .auth-tab.active { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--bg-primary); }
+
+    .auth-form { width: 100%; max-width: 300px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+
+    .password-input-wrap { position: relative; }
+    .password-input {
+      width: 100%; padding: 14px 48px 14px 16px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--bg-card);
+      color: var(--text-primary); font-size: 16px; outline: none;
+      transition: border-color 150ms;
+    }
+    .password-input:focus { border-color: var(--accent-primary); }
+    .password-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; padding: 4px;
+    }
+
+    .strength-meter { display: flex; gap: 4px; margin-top: 8px; }
+    .strength-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border); transition: background 200ms; }
+    .strength-bar.active.weak { background: var(--error); }
+    .strength-bar.active.fair { background: var(--accent-warm); }
+    .strength-bar.active.good { background: var(--accent-blue); }
+    .strength-bar.active.strong { background: var(--success); }
+
+    .requirements { margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+    .requirement { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .requirement.met { color: var(--success); }
+    .requirement::before { content: '○'; }
+    .requirement.met::before { content: '✓'; }
+
+    .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 100ms, opacity 100ms; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent-primary); color: var(--bg-primary); }
+    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); margin-top: 8px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .bio-btn {
+      width: 80px; height: 80px; border-radius: 50%; background: var(--bg-card);
+      border: 2px solid var(--accent-primary); margin: 20px auto;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 150ms; font-size: 36px;
+    }
+    .bio-btn:active { transform: scale(0.95); background: var(--bg-card-hover); }
+    .bio-btn.hidden { display: none; }
+
+    .lock-error {
+      color: var(--error); font-size: 14px; margin-top: 16px; text-align: center;
+      min-height: 20px; animation: shake 300ms;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+
+    .lockout-timer { font-size: 48px; font-weight: 700; font-family: "SF Mono", monospace; color: var(--error); margin: 20px 0; }
+
+    .attempts-warning { font-size: 13px; color: var(--accent-warm); margin-top: 12px; text-align: center; }
+
     /* Header */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding: 0 4px;
-    }
-
-    .header-date {
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-
-    .header-title {
-      font-size: 24px;
-      font-weight: 700;
-    }
-
-    .header-weather {
-      font-size: 24px;
-    }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 4px; }
+    .header-date { font-size: 14px; color: var(--text-secondary); }
+    .header-title { font-size: 24px; font-weight: 700; }
+    .header-weather { font-size: 24px; }
 
     /* Overview Cards */
-    .overview {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
+    .overview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     .overview-card {
-      background: var(--bg-card);
-      border-radius: 16px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      border: 1px solid var(--border);
-      transition: transform 100ms, background 100ms;
+      background: var(--bg-card); border-radius: 16px; padding: 16px;
+      display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border);
+      transition: transform 100ms, background 100ms; cursor: pointer;
     }
-
-    .overview-card:active {
-      transform: scale(0.98);
-      background: var(--bg-card-hover);
-    }
-
-    .overview-icon {
-      font-size: 24px;
-    }
-
-    .overview-count {
-      font-size: 32px;
-      font-weight: 700;
-      font-family: "SF Mono", "JetBrains Mono", monospace;
-    }
-
-    .overview-label {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
+    .overview-card:active { transform: scale(0.98); background: var(--bg-card-hover); }
+    .overview-icon { font-size: 24px; }
+    .overview-count { font-size: 32px; font-weight: 700; font-family: "SF Mono", monospace; }
+    .overview-label { font-size: 13px; color: var(--text-secondary); }
     .overview-card.supplements .overview-count { color: var(--accent-purple); }
     .overview-card.training .overview-count { color: var(--accent-blue); }
 
     /* Section */
-    .section {
-      margin-bottom: 24px;
-    }
-
-    .section-title {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 12px;
-      padding: 0 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+    .section { margin-bottom: 24px; }
+    .section-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; padding: 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* Quick Buttons */
-    .quick-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
+    .quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .quick-btn {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      transition: transform 100ms, background 100ms, border-color 100ms;
-      min-height: 80px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 8px; display: flex; flex-direction: column; align-items: center;
+      gap: 6px; cursor: pointer; transition: transform 100ms, background 100ms, border-color 100ms; min-height: 80px;
     }
-
-    .quick-btn:active {
-      transform: scale(0.95);
-      background: var(--bg-card-hover);
-    }
-
-    .quick-btn.supplement {
-      border-color: rgba(168, 85, 247, 0.3);
-    }
-
-    .quick-btn.supplement:active {
-      border-color: var(--accent-purple);
-    }
-
-    .quick-btn.exercise {
-      border-color: rgba(74, 158, 255, 0.3);
-    }
-
-    .quick-btn.exercise:active {
-      border-color: var(--accent-blue);
-    }
-
-    .quick-btn-icon {
-      font-size: 24px;
-    }
-
-    .quick-btn-label {
-      font-size: 13px;
-      color: var(--text-secondary);
-      text-align: center;
-    }
+    .quick-btn:active { transform: scale(0.95); background: var(--bg-card-hover); }
+    .quick-btn.supplement { border-color: rgba(168, 85, 247, 0.3); }
+    .quick-btn.supplement:active { border-color: var(--accent-purple); }
+    .quick-btn.exercise { border-color: rgba(74, 158, 255, 0.3); }
+    .quick-btn.exercise:active { border-color: var(--accent-blue); }
+    .quick-btn-icon { font-size: 24px; }
+    .quick-btn-label { font-size: 13px; color: var(--text-secondary); text-align: center; }
 
     /* Floating Add Button */
     .fab {
-      position: fixed;
-      bottom: calc(80px + var(--safe-bottom) + 16px);
-      right: 16px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: var(--accent-primary);
-      color: var(--bg-primary);
-      font-size: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(0, 212, 170, 0.4);
-      transition: transform 150ms, box-shadow 150ms;
-      z-index: 100;
-      border: none;
+      position: fixed; bottom: calc(80px + var(--safe-bottom) + 16px); right: 16px;
+      width: 56px; height: 56px; border-radius: 50%; background: var(--accent-primary);
+      color: var(--bg-primary); font-size: 28px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(0, 212, 170, 0.4);
+      transition: transform 150ms, box-shadow 150ms; z-index: 100; border: none;
     }
-
-    .fab:active {
-      transform: scale(0.92);
-    }
-
-    .fab.open {
-      transform: rotate(45deg);
-      box-shadow: 0 2px 10px rgba(0, 212, 170, 0.3);
-    }
+    .fab:active { transform: scale(0.92); }
+    .fab.open { transform: rotate(45deg); box-shadow: 0 2px 10px rgba(0, 212, 170, 0.3); }
 
     /* Bottom Navigation */
     .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      background: rgba(13, 13, 15, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid var(--border);
-      display: flex;
-      padding: 8px 0;
-      padding-bottom: calc(8px + var(--safe-bottom));
-      z-index: 200;
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px;
+      background: rgba(13, 13, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border); display: flex; padding: 8px 0;
+      padding-bottom: calc(8px + var(--safe-bottom)); z-index: 200;
     }
-
     .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 8px;
-      cursor: pointer;
-      transition: opacity 150ms;
-      border: none;
-      background: none;
-      color: var(--text-muted);
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px;
+      cursor: pointer; transition: opacity 150ms; border: none; background: none; color: var(--text-muted);
     }
-
-    .nav-item.active {
-      color: var(--accent-primary);
-    }
-
-    .nav-item-icon {
-      font-size: 22px;
-    }
-
-    .nav-item-label {
-      font-size: 11px;
-    }
+    .nav-item.active { color: var(--accent-primary); }
+    .nav-item-icon { font-size: 22px; }
+    .nav-item-label { font-size: 11px; }
 
     /* Modal */
     .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-      z-index: 300;
-      opacity: 0;
-      transition: opacity 200ms;
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7);
+      display: none; align-items: flex-end; justify-content: center; z-index: 300; opacity: 0; transition: opacity 200ms;
     }
-
-    .modal-overlay.active {
-      display: flex;
-      opacity: 1;
-    }
-
+    .modal-overlay.active { display: flex; opacity: 1; }
     .modal {
-      background: var(--bg-card);
-      border-radius: 20px 20px 0 0;
-      width: 100%;
-      max-width: 480px;
-      max-height: 85vh;
-      overflow-y: auto;
-      transform: translateY(100%);
-      transition: transform 250ms ease-out;
+      background: var(--bg-card); border-radius: 20px 20px 0 0; width: 100%; max-width: 480px;
+      max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 250ms ease-out;
       -webkit-overflow-scrolling: touch;
     }
-
-    .modal-overlay.active .modal {
-      transform: translateY(0);
-    }
-
+    .modal-overlay.active .modal { transform: translateY(0); }
     .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      background: var(--bg-card);
-      z-index: 1;
+      display: flex; justify-content: space-between; align-items: center; padding: 20px;
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg-card); z-index: 1;
     }
-
-    .modal-title {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
+    .modal-title { font-size: 18px; font-weight: 600; }
     .modal-close {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--bg-primary);
-      border: none;
-      color: var(--text-secondary);
-      font-size: 18px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%; background: var(--bg-primary); border: none;
+      color: var(--text-secondary); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
-
-    .modal-body {
-      padding: 20px;
-    }
+    .modal-body { padding: 20px; }
 
     /* Tabs */
-    .tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
     .tab {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 150ms;
-      text-align: center;
+      flex: 1; padding: 12px; border-radius: 10px; background: var(--bg-primary); border: 1px solid var(--border);
+      color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 150ms; text-align: center;
     }
-
-    .tab.active {
-      background: var(--accent-primary);
-      border-color: var(--accent-primary);
-      color: var(--bg-primary);
-    }
+    .tab.active { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--bg-primary); }
 
     /* Form Elements */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-    }
-
     .form-input {
-      width: 100%;
-      padding: 14px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-size: 16px;
-      outline: none;
-      transition: border-color 150ms;
+      width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg-primary); color: var(--text-primary); font-size: 16px; outline: none; transition: border-color 150ms;
     }
-
-    .form-input:focus {
-      border-color: var(--accent-primary);
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-
-    .form-row .form-group {
-      margin-bottom: 0;
-    }
+    .form-input:focus { border-color: var(--accent-primary); }
+    .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .form-row .form-group { margin-bottom: 0; }
 
     /* Number Input */
-    .num-input {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
+    .num-input { display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .num-input-value {
-      font-size: 28px;
-      font-weight: 700;
-      font-family: "SF Mono", "JetBrains Mono", monospace;
-      color: var(--accent-primary);
-      cursor: pointer;
-      padding: 8px 16px;
-      border-radius: 10px;
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      min-width: 80px;
-      text-align: center;
-      transition: border-color 150ms;
+      font-size: 28px; font-weight: 700; font-family: "SF Mono", monospace; color: var(--accent-primary);
+      cursor: pointer; padding: 8px 16px; border-radius: 10px; background: var(--bg-primary);
+      border: 1px solid var(--border); min-width: 80px; text-align: center; transition: border-color 150ms;
     }
-
-    .num-input-value:focus {
-      border-color: var(--accent-primary);
-      outline: none;
-    }
-
-    .num-input-label {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
+    .num-input-value:focus { border-color: var(--accent-primary); outline: none; }
+    .num-input-label { font-size: 12px; color: var(--text-muted); }
 
     /* Buttons */
-    .btn {
-      width: 100%;
-      padding: 16px;
-      border-radius: 12px;
-      border: none;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 100ms, opacity 100ms;
-    }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn-primary {
-      background: var(--accent-primary);
-      color: var(--bg-primary);
-    }
-
-    .btn-secondary {
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-    }
+    .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 100ms, opacity 100ms; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent-primary); color: var(--bg-primary); }
+    .btn-secondary { background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); }
 
     /* Exercise Selector */
-    .exercise-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-
+    .exercise-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .exercise-btn {
-      padding: 14px 12px;
-      border-radius: 12px;
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 150ms;
-      text-align: center;
+      padding: 14px 12px; border-radius: 12px; background: var(--bg-primary); border: 1px solid var(--border);
+      color: var(--text-primary); font-size: 14px; cursor: pointer; transition: all 150ms; text-align: center;
     }
-
-    .exercise-btn:active {
-      background: var(--bg-card-hover);
-      border-color: var(--accent-blue);
-    }
-
-    .exercise-btn.selected {
-      background: rgba(74, 158, 255, 0.15);
-      border-color: var(--accent-blue);
-      color: var(--accent-blue);
-    }
+    .exercise-btn:active { background: var(--bg-card-hover); border-color: var(--accent-blue); }
+    .exercise-btn.selected { background: rgba(74, 158, 255, 0.15); border-color: var(--accent-blue); color: var(--accent-blue); }
 
     /* Calendar */
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .calendar-month {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .calendar-nav {
-      display: flex;
-      gap: 8px;
-    }
-
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .calendar-month { font-size: 18px; font-weight: 600; }
+    .calendar-nav { display: flex; gap: 8px; }
     .calendar-nav-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--text-primary); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
-
-    .calendar-weekdays {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      margin-bottom: 8px;
-    }
-
-    .calendar-weekday {
-      text-align: center;
-      font-size: 12px;
-      color: var(--text-muted);
-      padding: 8px 0;
-    }
-
-    .calendar-days {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-    }
-
+    .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px; }
+    .calendar-weekday { text-align: center; font-size: 12px; color: var(--text-muted); padding: 8px 0; }
+    .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
     .calendar-day {
-      aspect-ratio: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border-radius: 10px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 150ms;
-      position: relative;
-      gap: 2px;
+      aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 150ms; position: relative; gap: 2px;
     }
-
-    .calendar-day.other-month {
-      color: var(--text-muted);
-    }
-
-    .calendar-day.today {
-      border: 2px solid var(--accent-primary);
-    }
-
-    .calendar-day.selected {
-      background: var(--accent-primary);
-      color: var(--bg-primary);
-    }
-
-    .calendar-day.has-records::after {
-      content: '';
-      position: absolute;
-      bottom: 4px;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent-primary);
-    }
-
+    .calendar-day.other-month { color: var(--text-muted); }
+    .calendar-day.today { border: 2px solid var(--accent-primary); }
+    .calendar-day.selected { background: var(--accent-primary); color: var(--bg-primary); }
+    .calendar-day.has-records::after { content: ''; position: absolute; bottom: 4px; width: 6px; height: 6px; border-radius: 50%; }
     .calendar-day.has-supplements::after { background: var(--accent-purple); }
     .calendar-day.has-training::after { background: var(--accent-blue); }
 
     /* Day Detail */
-    .day-detail {
-      background: var(--bg-card);
-      border-radius: 16px;
-      padding: 16px;
-      margin-top: 16px;
-    }
-
-    .day-detail-header {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .day-detail-empty {
-      color: var(--text-muted);
-      font-size: 14px;
-      text-align: center;
-      padding: 24px 0;
-    }
-
-    .day-record {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .day-record:last-child {
-      border-bottom: none;
-    }
-
-    .day-record-icon {
-      font-size: 20px;
-    }
-
-    .day-record-info {
-      flex: 1;
-    }
-
-    .day-record-name {
-      font-size: 15px;
-      font-weight: 500;
-    }
-
-    .day-record-detail {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    .day-record-time {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-family: "SF Mono", monospace;
-    }
+    .day-detail { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-top: 16px; }
+    .day-detail-header { font-size: 16px; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .day-detail-empty { color: var(--text-muted); font-size: 14px; text-align: center; padding: 24px 0; }
+    .day-record { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .day-record:last-child { border-bottom: none; }
+    .day-record-icon { font-size: 20px; }
+    .day-record-info { flex: 1; }
+    .day-record-name { font-size: 15px; font-weight: 500; }
+    .day-record-detail { font-size: 13px; color: var(--text-secondary); }
+    .day-record-time { font-size: 13px; color: var(--text-muted); font-family: "SF Mono", monospace; }
 
     /* Plan Page */
     .plan-card {
-      background: var(--bg-card);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 12px;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 150ms;
+      background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px;
+      border: 1px solid var(--border); cursor: pointer; transition: all 150ms;
     }
-
-    .plan-card:active {
-      transform: scale(0.98);
-    }
-
-    .plan-card.active {
-      border-color: var(--accent-primary);
-    }
-
-    .plan-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .plan-icon {
-      font-size: 28px;
-    }
-
-    .plan-info {
-      flex: 1;
-    }
-
-    .plan-name {
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .plan-count {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    .plan-exercises {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .plan-tag {
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      background: var(--bg-primary);
-      color: var(--text-secondary);
-    }
+    .plan-card:active { transform: scale(0.98); }
+    .plan-card.active { border-color: var(--accent-primary); }
+    .plan-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .plan-icon { font-size: 28px; }
+    .plan-info { flex: 1; }
+    .plan-name { font-size: 16px; font-weight: 600; }
+    .plan-count { font-size: 13px; color: var(--text-secondary); }
+    .plan-exercises { display: flex; flex-wrap: wrap; gap: 6px; }
+    .plan-tag { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: var(--bg-primary); color: var(--text-secondary); }
 
     /* Profile Page */
-    .profile-card {
-      background: var(--bg-card);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 12px;
-      border: 1px solid var(--border);
-    }
-
-    .profile-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .profile-row:last-child {
-      border-bottom: none;
-    }
-
-    .profile-label {
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-
-    .profile-value {
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .sync-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 20px;
-    }
-
+    .profile-card { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+    .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-label { font-size: 14px; color: var(--text-secondary); }
+    .profile-value { font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .sync-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 20px; }
     .sync-status.synced { background: rgba(34, 197, 94, 0.15); color: var(--success); }
     .sync-status.syncing { background: rgba(74, 158, 255, 0.15); color: var(--accent-blue); }
     .sync-status.offline { background: rgba(139, 139, 148, 0.15); color: var(--text-muted); }
     .sync-status.error { background: rgba(239, 68, 68, 0.15); color: var(--error); }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-
-    .stat-item {
-      background: var(--bg-primary);
-      border-radius: 12px;
-      padding: 16px 12px;
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: 24px;
-      font-weight: 700;
-      font-family: "SF Mono", monospace;
-      color: var(--accent-primary);
-    }
-
-    .stat-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .stat-item { background: var(--bg-primary); border-radius: 12px; padding: 16px 12px; text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 700; font-family: "SF Mono", monospace; color: var(--accent-primary); }
+    .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
     /* Toast */
     .toast {
-      position: fixed;
-      bottom: calc(100px + var(--safe-bottom));
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      padding: 12px 24px;
-      border-radius: 30px;
-      font-size: 14px;
-      font-weight: 500;
-      z-index: 400;
-      opacity: 0;
-      transition: all 300ms ease-out;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      position: fixed; bottom: calc(100px + var(--safe-bottom)); left: 50%;
+      transform: translateX(-50%) translateY(100px); padding: 12px 24px; border-radius: 30px;
+      font-size: 14px; font-weight: 500; z-index: 400; opacity: 0; transition: all 300ms ease-out;
+      display: flex; align-items: center; gap: 8px;
     }
-
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .toast.success { background: var(--success); color: #000; }
     .toast.error { background: var(--error); color: #fff; }
 
-    /* Input Modal */
-    .input-modal {
-      display: none;
-    }
-
-    .input-modal.active {
-      display: block;
-    }
-
-    /* Supple/Exercise Quick Actions in Modal */
-    .quick-add-section {
-      margin-bottom: 16px;
-    }
-
-    .quick-add-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .quick-add-item {
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 8px;
-      text-align: center;
-      cursor: pointer;
-      font-size: 13px;
-      transition: all 150ms;
-    }
-
-    .quick-add-item:active {
-      background: var(--bg-card-hover);
-      border-color: var(--accent-primary);
-    }
-
-    .quick-add-item span {
-      display: block;
-      font-size: 20px;
-      margin-bottom: 4px;
-    }
-
     /* Setup Page Styles */
-    .setup-info {
-      background: var(--bg-card);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 16px;
-      border: 1px solid var(--border);
-    }
-
-    .setup-info p {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 12px;
-    }
-
-    .setup-info code {
-      background: var(--bg-primary);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: "SF Mono", monospace;
-      font-size: 13px;
-    }
-
+    .setup-info { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+    .setup-info p { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
+    .setup-info code { background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; font-family: "SF Mono", monospace; font-size: 13px; }
     .profile-input {
-      width: 100%;
-      padding: 14px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-size: 14px;
-      outline: none;
-      margin-bottom: 12px;
+      width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg-primary); color: var(--text-primary); font-size: 14px; outline: none; margin-bottom: 12px;
     }
-
-    .profile-input:focus {
-      border-color: var(--accent-primary);
-    }
-
-    .profile-input::placeholder {
-      color: var(--text-muted);
-    }
+    .profile-input:focus { border-color: var(--accent-primary); }
+    .profile-input::placeholder { color: var(--text-muted); }
 
     /* Empty State */
-    .empty-state {
-      text-align: center;
-      padding: 48px 24px;
-      color: var(--text-muted);
-    }
-
-    .empty-state-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-    }
-
-    .empty-state-text {
-      font-size: 14px;
-    }
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+    .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state-text { font-size: 14px; }
 
     /* Offline Banner */
-    .offline-banner {
-      display: none;
-      background: rgba(139, 139, 148, 0.15);
-      color: var(--text-secondary);
-      text-align: center;
-      padding: 8px;
-      font-size: 13px;
-    }
+    .offline-banner { display: none; background: rgba(139, 139, 148, 0.15); color: var(--text-secondary); text-align: center; padding: 8px; font-size: 13px; }
+    .offline-banner.show { display: block; }
 
-    .offline-banner.show {
-      display: block;
+    /* Quick add in modal */
+    .quick-add-section { margin-bottom: 16px; }
+    .quick-add-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .quick-add-item {
+      background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; padding: 12px 8px;
+      text-align: center; cursor: pointer; font-size: 13px; transition: all 150ms;
     }
-
-    /* Swipe to delete */
-    .record-item {
-      position: relative;
-      overflow: hidden;
-      background: var(--bg-card);
-      border-radius: 12px;
-      margin-bottom: 8px;
-    }
-
-    .record-delete {
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 80px;
-      background: var(--error);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 14px;
-      transform: translateX(100%);
-      transition: transform 200ms ease-out;
-    }
-
-    .record-item.swiped .record-delete {
-      transform: translateX(0);
-    }
-    /* Lock Screen */
-    .lock-screen {
-      position: fixed;
-      inset: 0;
-      background: var(--bg-primary);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      padding: 20px;
-    }
-
-    .lock-screen.hidden {
-      display: none;
-    }
-
-    .lock-icon {
-      font-size: 64px;
-      margin-bottom: 24px;
-    }
-
-    .lock-title {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .lock-subtitle {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 32px;
-    }
-
-    .pin-dots {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-
-    .pin-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 2px solid var(--text-muted);
-      transition: all 150ms;
-    }
-
-    .pin-dot.filled {
-      background: var(--accent-primary);
-      border-color: var(--accent-primary);
-    }
-
-    .pin-dot.error {
-      background: var(--error);
-      border-color: var(--error);
-    }
-
-    .pin-keypad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      max-width: 280px;
-    }
-
-    .pin-key {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      font-size: 28px;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 100ms;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .pin-key:active {
-      transform: scale(0.9);
-      background: var(--bg-card-hover);
-    }
-
-    .pin-key.empty {
-      visibility: hidden;
-    }
-
-    .pin-key.action {
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-
-    .lock-error {
-      color: var(--error);
-      font-size: 14px;
-      margin-top: 16px;
-      height: 20px;
-    }
-
-    .lock-setup {
-      text-align: center;
-    }
-
-    .lock-setup p {
-      color: var(--text-secondary);
-      font-size: 14px;
-      margin-bottom: 16px;
-    }
+    .quick-add-item:active { background: var(--bg-card-hover); border-color: var(--accent-primary); }
+    .quick-add-item span { display: block; font-size: 20px; margin-bottom: 4px; }
   </style>
 </head>
 <body>
-  <!-- Lock Screen -->
-  <div class="lock-screen" id="lockScreen">
-    <div class="lock-icon">🔒</div>
+  <!-- Auth Screen -->
+  <div class="lock-screen" id="authScreen">
+    <div class="lock-icon">🔐</div>
     <div class="lock-title">健身记录</div>
-    <div class="lock-subtitle" id="lockSubtitle">输入 PIN 码解锁</div>
+    <div class="lock-subtitle" id="authSubtitle">请先设置主密码</div>
 
-    <div class="pin-dots" id="pinDots">
-      <div class="pin-dot"></div>
-      <div class="pin-dot"></div>
-      <div class="pin-dot"></div>
-      <div class="pin-dot"></div>
+    <div class="auth-tabs" id="authTabs" style="display: none;">
+      <button class="auth-tab active" onclick="switchAuthTab('password')">密码</button>
+      <button class="auth-tab" onclick="switchAuthTab('biometric')">生物识别</button>
     </div>
 
-    <div class="pin-keypad" id="pinKeypad">
-      <button class="pin-key" onclick="enterPin('1')">1</button>
-      <button class="pin-key" onclick="enterPin('2')">2</button>
-      <button class="pin-key" onclick="enterPin('3')">3</button>
-      <button class="pin-key" onclick="enterPin('4')">4</button>
-      <button class="pin-key" onclick="enterPin('5')">5</button>
-      <button class="pin-key" onclick="enterPin('6')">6</button>
-      <button class="pin-key" onclick="enterPin('7')">7</button>
-      <button class="pin-key" onclick="enterPin('8')">8</button>
-      <button class="pin-key" onclick="enterPin('9')">9</button>
-      <button class="pin-key empty"></button>
-      <button class="pin-key" onclick="enterPin('0')">0</button>
-      <button class="pin-key action" onclick="deletePin()">⌫</button>
+    <!-- Password Setup -->
+    <div class="auth-form" id="passwordSetup">
+      <div class="form-group">
+        <label class="form-label">设置主密码（8位以上）</label>
+        <div class="password-input-wrap">
+          <input type="password" class="password-input" id="setupPassword" placeholder="输入密码" autocomplete="new-password">
+          <button class="password-toggle" onclick="togglePassword('setupPassword')">👁</button>
+        </div>
+        <div class="strength-meter" id="strengthMeter">
+          <div class="strength-bar" id="strengthBar1"></div>
+          <div class="strength-bar" id="strengthBar2"></div>
+          <div class="strength-bar" id="strengthBar3"></div>
+          <div class="strength-bar" id="strengthBar4"></div>
+        </div>
+        <div class="requirements" id="requirements">
+          <div class="requirement" id="reqLen">至少8个字符</div>
+          <div class="requirement" id="reqUpper">包含大写字母</div>
+          <div class="requirement" id="reqLower">包含小写字母</div>
+          <div class="requirement" id="reqNum">包含数字</div>
+          <div class="requirement" id="reqSpecial">包含特殊字符</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">确认密码</label>
+        <div class="password-input-wrap">
+          <input type="password" class="password-input" id="setupPasswordConfirm" placeholder="再次输入密码" autocomplete="new-password">
+          <button class="password-toggle" onclick="togglePassword('setupPasswordConfirm')">👁</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="setupBtn" onclick="handlePasswordSetup()" disabled>设置密码</button>
     </div>
 
-    <div class="lock-error" id="lockError"></div>
+    <!-- Password Login -->
+    <div class="auth-form" id="passwordLogin" style="display: none;">
+      <div class="form-group">
+        <label class="form-label">输入主密码</label>
+        <div class="password-input-wrap">
+          <input type="password" class="password-input" id="loginPassword" placeholder="密码" autocomplete="current-password">
+          <button class="password-toggle" onclick="togglePassword('loginPassword')">👁</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="handlePasswordLogin()">解锁</button>
+      <div class="attempts-warning" id="attemptsWarning"></div>
+    </div>
+
+    <!-- Biometric Login -->
+    <div class="auth-form" id="biometricLogin" style="display: none;">
+      <button class="bio-btn" id="bioBtn" onclick="handleBiometricLogin()">👆</button>
+      <p style="text-align: center; color: var(--text-secondary); font-size: 14px;">点击使用指纹或 Face ID</p>
+    </div>
+
+    <div class="lock-error" id="authError"></div>
+
+    <!-- Lockout Timer -->
+    <div id="lockoutSection" style="display: none;">
+      <div class="lockout-timer" id="lockoutTimer">05:00</div>
+      <p style="color: var(--text-secondary);">请稍后重试</p>
+    </div>
   </div>
 
-  <div class="app">
+  <!-- Main App -->
+  <div class="app" id="mainApp" style="display: none;">
     <div class="offline-banner" id="offlineBanner">📴 离线模式 — 数据将在联网后同步</div>
 
     <!-- Record Page -->
@@ -1148,12 +481,10 @@
           <div class="header-title">训练计划</div>
         </div>
       </div>
-
       <div class="section">
         <div class="section-title">我的计划</div>
         <div id="planList"></div>
       </div>
-
       <div class="section">
         <div class="section-title">今日训练</div>
         <div id="todayPlanDetail"></div>
@@ -1171,7 +502,6 @@
           </div>
         </div>
       </div>
-
       <div class="calendar-weekdays">
         <div class="calendar-weekday">日</div>
         <div class="calendar-weekday">一</div>
@@ -1182,7 +512,6 @@
         <div class="calendar-weekday">六</div>
       </div>
       <div class="calendar-days" id="calendarDays"></div>
-
       <div id="dayDetail"></div>
     </div>
 
@@ -1201,9 +530,7 @@
         <div class="profile-card">
           <div class="profile-row">
             <span class="profile-label">GitHub</span>
-            <span class="profile-value">
-              <span class="sync-status" id="syncStatus">未配置</span>
-            </span>
+            <span class="profile-value"><span class="sync-status" id="syncStatus">未配置</span></span>
           </div>
           <div class="profile-row">
             <span class="profile-label">最后同步</span>
@@ -1241,12 +568,20 @@
             <span class="profile-label">📤 导出数据</span>
             <span class="profile-value">→</span>
           </div>
-          <div class="profile-row" onclick="clearLocalData()" style="cursor:pointer">
-            <span class="profile-label">🗑️ 清除本地数据</span>
+          <div class="profile-row" onclick="changePassword()" style="cursor:pointer">
+            <span class="profile-label">🔑 修改密码</span>
+            <span class="profile-value">→</span>
+          </div>
+          <div class="profile-row" onclick="registerBiometric()" style="cursor:pointer">
+            <span class="profile-label">👆 注册生物识别</span>
             <span class="profile-value">→</span>
           </div>
           <div class="profile-row" onclick="lockApp()" style="cursor:pointer">
             <span class="profile-label">🔒 锁定应用</span>
+            <span class="profile-value">→</span>
+          </div>
+          <div class="profile-row" onclick="clearLocalData()" style="cursor:pointer">
+            <span class="profile-label">🗑️ 清除本地数据</span>
             <span class="profile-value">→</span>
           </div>
         </div>
@@ -1322,15 +657,15 @@
           </div>
           <div class="form-row">
             <div class="form-group num-input">
-              <div class="num-input-value" id="weightValue" contenteditable="true" onclick="editNum('weight')">60</div>
+              <div class="num-input-value" id="weightValue" contenteditable="true">60</div>
               <div class="num-input-label">重量(kg)</div>
             </div>
             <div class="form-group num-input">
-              <div class="num-input-value" id="setsValue" contenteditable="true" onclick="editNum('sets')">3</div>
+              <div class="num-input-value" id="setsValue" contenteditable="true">3</div>
               <div class="num-input-label">组数</div>
             </div>
             <div class="form-group num-input">
-              <div class="num-input-value" id="repsValue" contenteditable="true" onclick="editNum('reps')">10</div>
+              <div class="num-input-value" id="repsValue" contenteditable="true">10</div>
               <div class="num-input-label">次数</div>
             </div>
           </div>
@@ -1355,6 +690,349 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // ==================== CRYPTO UTILITIES ====================
+    async function sha256(text) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(text);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function deriveKey(password, salt) {
+      const encoder = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: encoder.encode(salt), iterations: 100000, hash: 'SHA-256' },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    async function encryptData(data, password) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(password, salt);
+      const encoder = new TextEncoder();
+      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(JSON.stringify(data)));
+      return {
+        salt: Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join(''),
+        iv: Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join(''),
+        data: Array.from(new Uint8Array(encrypted)).map(b => b.toString(16).padStart(2, '0')).join('')
+      };
+    }
+
+    async function decryptData(encryptedObj, password) {
+      const salt = new Uint8Array(encryptedObj.salt.match(/.{2}/g).map(b => parseInt(b, 16)));
+      const iv = new Uint8Array(encryptedObj.iv.match(/.{2}/g).map(b => parseInt(b, 16)));
+      const data = new Uint8Array(encryptedObj.data.match(/.{2}/g).map(b => parseInt(b, 16)));
+      const key = await deriveKey(password, salt);
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+      const decoder = new TextDecoder();
+      return JSON.parse(decoder.decode(decrypted));
+    }
+
+    // ==================== AUTH STATE ====================
+    const AUTH_CONFIG = {
+      maxAttempts: 5,
+      lockoutDuration: 300, // 5 minutes
+      sessionTimeout: 300, // 5 minutes inactivity
+      minPasswordLength: 8
+    };
+
+    let authState = {
+      isSetup: false,
+      passwordHash: '',
+      salt: '',
+      biometricAvailable: false,
+      biometricCredentialId: null,
+      attempts: 0,
+      lockoutUntil: 0,
+      sessionStart: 0,
+      lastActivity: 0
+    };
+
+    let inactivityTimer = null;
+
+    // ==================== PASSWORD VALIDATION ====================
+    function checkPasswordStrength(password) {
+      const checks = {
+        length: password.length >= AUTH_CONFIG.minPasswordLength,
+        upper: /[A-Z]/.test(password),
+        lower: /[a-z]/.test(password),
+        num: /[0-9]/.test(password),
+        special: /[^A-Za-z0-9]/.test(password)
+      };
+      const score = Object.values(checks).filter(Boolean).length;
+      return { checks, score };
+    }
+
+    function updateStrengthMeter(score) {
+      const bars = ['strengthBar1', 'strengthBar2', 'strengthBar3', 'strengthBar4'];
+      const levels = ['weak', 'fair', 'good', 'strong'];
+      bars.forEach((id, i) => {
+        const bar = document.getElementById(id);
+        bar.className = 'strength-bar';
+        if (i < score) {
+          bar.classList.add('active', levels[Math.min(score - 1, 3)]);
+        }
+      });
+    }
+
+    function updateRequirements(checks) {
+      Object.entries(checks).forEach(([key, met]) => {
+        const el = document.getElementById('req' + key.charAt(0).toUpperCase() + key.slice(1));
+        if (el) el.classList.toggle('met', met);
+      });
+    }
+
+    // ==================== BIOMETRIC ====================
+    async function checkBiometricAvailable() {
+      if (!window.PublicKeyCredential) return false;
+      try {
+        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        return available;
+      } catch {
+        return false;
+      }
+    }
+
+    async function registerBiometricCredential() {
+      if (!await checkBiometricAvailable()) {
+        showToast('生物识别不可用', 'error');
+        return;
+      }
+
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge,
+          rp: { name: 'Fitness App', id: window.location.hostname },
+          user: { id: Array.from(new Uint8Array([1])), name: 'user', displayName: 'Fitness User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+          authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+          timeout: 60000
+        }
+      });
+
+      if (credential) {
+        authState.biometricCredentialId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+        saveAuthState();
+        showToast('✅ 生物识别已注册', 'success');
+      }
+    }
+
+    async function authenticateWithBiometric() {
+      if (!authState.biometricCredentialId) return false;
+
+      try {
+        const challenge = crypto.getRandomValues(new Uint8Array(32));
+        const credential = await navigator.credentials.get({
+          publicKey: {
+            challenge,
+            allowCredentials: [{
+              type: 'public-key',
+              id: Uint8Array.from(atob(authState.biometricCredentialId), c => c.charCodeAt(0)).buffer
+            }],
+            userVerification: 'required',
+            timeout: 60000
+          }
+        });
+        return !!credential;
+      } catch {
+        return false;
+      }
+    }
+
+    // ==================== AUTH HANDLERS ====================
+    function switchAuthTab(tab) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      document.getElementById('passwordLogin').style.display = tab === 'password' ? 'block' : 'none';
+      document.getElementById('biometricLogin').style.display = tab === 'biometric' ? 'block' : 'none';
+    }
+
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    async function handlePasswordSetup() {
+      const password = document.getElementById('setupPassword').value;
+      const confirm = document.getElementById('setupPasswordConfirm').value;
+
+      if (password !== confirm) {
+        showAuthError('两次输入的密码不一致');
+        return;
+      }
+
+      const { checks, score } = checkPasswordStrength(password);
+      if (score < 4) {
+        showAuthError('密码强度不足，请满足所有要求');
+        return;
+      }
+
+      // Generate salt and hash
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      authState.salt = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+      authState.passwordHash = await sha256(password + authState.salt);
+      authState.isSetup = true;
+      authState.attempts = 0;
+      authState.sessionStart = Date.now();
+      authState.lastActivity = Date.now();
+
+      // Encrypt sensitive data with password
+      const data = loadPlainData();
+      if (data.supplements.length > 0 || data.trainings.length > 0) {
+        // Re-encrypt existing data with new password
+      }
+
+      saveAuthState();
+      unlockApp();
+    }
+
+    async function handlePasswordLogin() {
+      if (Date.now() < authState.lockoutUntil) {
+        showAuthError('请等待锁定结束');
+        return;
+      }
+
+      const password = document.getElementById('loginPassword').value;
+      const hash = await sha256(password + authState.salt);
+
+      if (hash === authState.passwordHash) {
+        authState.attempts = 0;
+        authState.sessionStart = Date.now();
+        authState.lastActivity = Date.now();
+        saveAuthState();
+        document.getElementById('loginPassword').value = '';
+        unlockApp();
+      } else {
+        authState.attempts++;
+        if (authState.attempts >= AUTH_CONFIG.maxAttempts) {
+          authState.lockoutUntil = Date.now() + AUTH_CONFIG.lockoutDuration * 1000;
+          showLockout();
+        } else {
+          const remaining = AUTH_CONFIG.maxAttempts - authState.attempts;
+          showAuthError(`密码错误，剩余 ${remaining} 次尝试机会`);
+          updateAttemptsWarning(remaining);
+        }
+      }
+    }
+
+    async function handleBiometricLogin() {
+      const success = await authenticateWithBiometric();
+      if (success) {
+        authState.sessionStart = Date.now();
+        authState.lastActivity = Date.now();
+        unlockApp();
+      } else {
+        showAuthError('生物识别验证失败');
+      }
+    }
+
+    function showLockout() {
+      document.getElementById('passwordLogin').style.display = 'none';
+      document.getElementById('lockoutSection').style.display = 'block';
+      document.getElementById('authError').textContent = '尝试次数过多';
+
+      let remaining = Math.ceil((authState.lockoutUntil - Date.now()) / 1000);
+      const timer = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+          clearInterval(timer);
+          authState.attempts = 0;
+          authState.lockoutUntil = 0;
+          saveAuthState();
+          document.getElementById('lockoutSection').style.display = 'none';
+          document.getElementById('passwordLogin').style.display = 'block';
+          document.getElementById('authError').textContent = '';
+        }
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        document.getElementById('lockoutTimer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    function showAuthError(msg) {
+      const el = document.getElementById('authError');
+      el.textContent = msg;
+      el.style.animation = 'none';
+      el.offsetHeight; // Trigger reflow
+      el.style.animation = 'shake 300ms';
+    }
+
+    function updateAttemptsWarning(remaining) {
+      const el = document.getElementById('attemptsWarning');
+      if (el) el.textContent = `剩余 ${remaining} 次尝试机会`;
+    }
+
+    // ==================== SESSION MANAGEMENT ====================
+    function resetInactivityTimer() {
+      authState.lastActivity = Date.now();
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        if (authState.isSetup && Date.now() - authState.lastActivity > AUTH_CONFIG.sessionTimeout * 1000) {
+          lockApp();
+        }
+      }, AUTH_CONFIG.sessionTimeout * 1000);
+    }
+
+    function lockApp() {
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('authScreen').classList.remove('hidden');
+
+      // Show login screen
+      document.getElementById('passwordSetup').style.display = 'none';
+      document.getElementById('passwordLogin').style.display = 'block';
+      document.getElementById('biometricLogin').style.display = authState.biometricCredentialId ? 'block' : 'none';
+      document.getElementById('authTabs').style.display = authState.biometricCredentialId ? 'flex' : 'none';
+      document.getElementById('authSubtitle').textContent = '输入密码解锁';
+      document.getElementById('authError').textContent = '';
+
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+    }
+
+    function unlockApp() {
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('mainApp').style.display = 'flex';
+
+      // Initialize app
+      renderQuickButtons();
+      renderPlanList();
+      updateTodayOverview();
+      renderCalendar();
+      updateHeaderDate();
+      checkGitHubConfig();
+      updateStats();
+
+      resetInactivityTimer();
+      showToast('🔓 已解锁', 'success');
+    }
+
+    // ==================== AUTH STATE PERSISTENCE ====================
+    function saveAuthState() {
+      localStorage.setItem('fitnessAuth', JSON.stringify({
+        isSetup: authState.isSetup,
+        passwordHash: authState.passwordHash,
+        salt: authState.salt,
+        biometricCredentialId: authState.biometricCredentialId,
+        attempts: authState.attempts,
+        lockoutUntil: authState.lockoutUntil
+      }));
+    }
+
+    function loadAuthState() {
+      const saved = localStorage.getItem('fitnessAuth');
+      if (saved) {
+        const data = JSON.parse(saved);
+        Object.assign(authState, data);
+      }
+    }
+
     // ==================== DATA ====================
     const PRESET_SUPPLEMENTS = [
       { name: '肌酸', icon: '💪', dosage: '5g' },
@@ -1375,12 +1053,7 @@
     };
 
     const MUSCLE_ICONS = {
-      '胸': '💪',
-      '背': '🏋️',
-      '腿': '🦵',
-      '肩': '💪',
-      '手臂': '💪',
-      '核心': '🎯'
+      '胸': '💪', '背': '🏋️', '腿': '🦵', '肩': '💪', '手臂': '💪', '核心': '🎯'
     };
 
     const DEFAULT_PLANS = [
@@ -1393,11 +1066,7 @@
       { id: 'rest', name: '休息日', muscleGroup: '休息', exercises: [] }
     ];
 
-    // ==================== STATE ====================
-    const PIN_LENGTH = 4;
-    let currentPin = '';
     let state = {
-      pin: '',
       supplements: [],
       trainings: [],
       plans: [],
@@ -1414,118 +1083,64 @@
       isOnline: navigator.onLine
     };
 
-    // ==================== PIN LOCK ====================
-    function enterPin(digit) {
-      if (currentPin.length >= PIN_LENGTH) return;
-      currentPin += digit;
-      updatePinDots();
-
-      if (currentPin.length === PIN_LENGTH) {
-        if (!state.pin) {
-          // First time setup - confirm PIN
-          if (!state.pinConfirm) {
-            state.pinConfirm = currentPin;
-            document.getElementById('lockSubtitle').textContent = '再次输入以确认';
-            document.getElementById('lockError').textContent = '';
-            updatePinDots();
-            setTimeout(() => { currentPin = ''; updatePinDots(); }, 300);
-          } else {
-            if (currentPin === state.pinConfirm) {
-              state.pin = currentPin;
-              delete state.pinConfirm;
-              saveToStorage();
-              unlockApp();
-            } else {
-              showPinError('两次输入不一致，请重试');
-              state.pinConfirm = null;
-              document.getElementById('lockSubtitle').textContent = '设置 PIN 码';
-              setTimeout(() => { currentPin = ''; updatePinDots(); }, 800);
-            }
-          }
-        } else {
-          // Verify PIN
-          if (currentPin === state.pin) {
-            unlockApp();
-          } else {
-            showPinError('PIN 错误，请重试');
-            setTimeout(() => { currentPin = ''; updatePinDots(); }, 800);
-          }
-        }
-      }
-    }
-
-    function deletePin() {
-      if (currentPin.length > 0) {
-        currentPin = currentPin.slice(0, -1);
-        updatePinDots();
-      }
-    }
-
-    function updatePinDots() {
-      const dots = document.querySelectorAll('.pin-dot');
-      dots.forEach((dot, i) => {
-        dot.classList.remove('filled', 'error');
-        if (i < currentPin.length) {
-          dot.classList.add('filled');
-        }
-      });
-    }
-
-    function showPinError(msg) {
-      const dots = document.querySelectorAll('.pin-dot');
-      dots.forEach(dot => dot.classList.add('error'));
-      document.getElementById('lockError').textContent = msg;
-      setTimeout(() => {
-        dots.forEach(dot => dot.classList.remove('error'));
-        document.getElementById('lockError').textContent = '';
-      }, 800);
-    }
-
-    function unlockApp() {
-      document.getElementById('lockScreen').classList.add('hidden');
-      document.querySelector('.app').style.display = 'flex';
-      // Initialize main app
-      renderQuickButtons();
-      renderPlanList();
-      updateTodayOverview();
-      renderCalendar();
-      updateHeaderDate();
-      checkGitHubConfig();
-      updateStats();
-      showToast('🔓 已解锁', 'success');
-    }
-
-    function lockApp() {
-      currentPin = '';
-      updatePinDots();
-      document.getElementById('lockScreen').classList.remove('hidden');
-    }
-
     // ==================== INIT ====================
     function init() {
-      loadFromStorage();
+      loadAuthState();
       setupOfflineListeners();
 
-      // Show lock screen if PIN is set
-      if (state.pin) {
-        document.getElementById('lockScreen').classList.remove('hidden');
-        document.getElementById('lockSubtitle').textContent = '输入 PIN 码解锁';
-        currentPin = '';
-        updatePinDots();
-        // Hide main app content
-        document.querySelector('.app').style.display = 'none';
-      } else {
+      if (!authState.isSetup) {
         // First time - show setup
-        document.getElementById('lockSubtitle').textContent = '设置 PIN 码（4位）';
-        document.querySelector('.app').style.display = 'none';
+        document.getElementById('authSubtitle').textContent = '请先设置主密码';
+        document.getElementById('passwordSetup').style.display = 'block';
+        document.getElementById('authTabs').style.display = 'none';
+
+        // Setup password strength checker
+        document.getElementById('setupPassword').addEventListener('input', (e) => {
+          const { checks, score } = checkPasswordStrength(e.target.value);
+          updateStrengthMeter(score);
+          updateRequirements(checks);
+          updateSetupButton();
+        });
+
+        document.getElementById('setupPasswordConfirm').addEventListener('input', updateSetupButton);
+
+      } else {
+        // Already setup - show login
+        document.getElementById('authSubtitle').textContent = '输入密码解锁';
+        document.getElementById('passwordSetup').style.display = 'none';
+        document.getElementById('passwordLogin').style.display = 'block';
+        document.getElementById('biometricLogin').style.display = authState.biometricCredentialId ? 'block' : 'none';
+        document.getElementById('authTabs').style.display = authState.biometricCredentialId ? 'flex' : 'none';
+
+        if (authState.biometricCredentialId) {
+          // Auto-trigger biometric if available
+          setTimeout(() => handleBiometricLogin(), 500);
+        }
+
+        if (authState.attempts > 0) {
+          updateAttemptsWarning(AUTH_CONFIG.maxAttempts - authState.attempts);
+        }
       }
+    }
+
+    function updateSetupButton() {
+      const password = document.getElementById('setupPassword').value;
+      const confirm = document.getElementById('setupPasswordConfirm').value;
+      const { score } = checkPasswordStrength(password);
+      const btn = document.getElementById('setupBtn');
+      btn.disabled = password.length < AUTH_CONFIG.minPasswordLength || password !== confirm || score < 4;
+    }
+
+    function loadPlainData() {
+      const saved = localStorage.getItem('fitnessData');
+      if (saved) return JSON.parse(saved);
+      return { supplements: [], trainings: [], plans: DEFAULT_PLANS, config: {}, lastSync: null };
     }
 
     function loadFromStorage() {
       const saved = localStorage.getItem('fitnessData');
       if (saved) {
         const data = JSON.parse(saved);
-        state.pin = data.pin || '';
         state.supplements = data.supplements || [];
         state.trainings = data.trainings || [];
         state.plans = data.plans || DEFAULT_PLANS;
@@ -1561,11 +1176,15 @@
       if (!navigator.onLine) {
         document.getElementById('offlineBanner').classList.add('show');
       }
+
+      // Track activity for session timeout
+      ['click', 'touchstart', 'scroll', 'keypress'].forEach(event => {
+        document.addEventListener(event, resetInactivityTimer, { passive: true });
+      });
     }
 
     // ==================== RENDER ====================
     function renderQuickButtons() {
-      // Supplements
       const suppGrid = document.getElementById('quickSupplements');
       suppGrid.innerHTML = PRESET_SUPPLEMENTS.map(s => `
         <button class="quick-btn supplement" onclick="quickAddSupp('${s.name}', '${s.dosage}')">
@@ -1574,7 +1193,6 @@
         </button>
       `).join('');
 
-      // Exercises
       const muscleGroups = ['胸', '背', '腿', '肩'];
       const exGrid = document.getElementById('quickExercises');
       exGrid.innerHTML = muscleGroups.map(m => `
@@ -1584,7 +1202,6 @@
         </button>
       `).join('');
 
-      // Quick add in modal
       const quickAddGrid = document.getElementById('quickAddSupps');
       quickAddGrid.innerHTML = PRESET_SUPPLEMENTS.map(s => `
         <div class="quick-add-item" onclick="fillSupp('${s.name}', '${s.dosage}')">
@@ -1596,11 +1213,8 @@
 
     function renderPlanList() {
       const container = document.getElementById('planList');
-      const today = getWeekday();
-      const todayPlan = state.plans.find(p => p.dayOfWeek === today) || state.plans[0];
-
       container.innerHTML = state.plans.filter(p => p.muscleGroup !== '休息').map(plan => `
-        <div class="plan-card ${plan.id === todayPlan?.id ? 'active' : ''}" onclick="showPlanDetail('${plan.id}')">
+        <div class="plan-card" onclick="showPlanDetail('${plan.id}')">
           <div class="plan-header">
             <span class="plan-icon">${MUSCLE_ICONS[plan.muscleGroup] || '📋'}</span>
             <div class="plan-info">
@@ -1615,36 +1229,19 @@
         </div>
       `).join('');
 
-      // Today plan detail
       const todayDetail = document.getElementById('todayPlanDetail');
-      if (todayPlan && todayPlan.exercises.length > 0) {
-        todayDetail.innerHTML = `
-          <div class="plan-card active">
-            <div class="plan-header">
-              <span class="plan-icon">${MUSCLE_ICONS[todayPlan.muscleGroup]}</span>
-              <div class="plan-info">
-                <div class="plan-name">${todayPlan.name}</div>
-                <div class="plan-count">点击开始训练</div>
-              </div>
-              <button class="btn btn-primary" style="width:auto;padding:10px 20px;" onclick="startWorkout('${todayPlan.id}')">开始</button>
-            </div>
-          </div>
-        `;
-      } else {
-        todayDetail.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">😴</div>
-            <div class="empty-state-text">今天休息日，好好恢复！</div>
-          </div>
-        `;
-      }
+      todayDetail.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">💪</div>
+          <div class="empty-state-text">开始训练吧！</div>
+        </div>
+      `;
     }
 
     function updateTodayOverview() {
       const today = formatDate(new Date());
       const todaySupps = state.supplements.filter(s => s.date === today);
       const todayTrains = state.trainings.filter(t => t.date === today);
-
       document.getElementById('todaySuppCount').textContent = todaySupps.length;
       document.getElementById('todayTrainCount').textContent = todayTrains.length;
     }
@@ -1652,8 +1249,7 @@
     function updateHeaderDate() {
       const now = new Date();
       const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-      const dateStr = `${weekdays[now.getDay()]} · ${now.getMonth() + 1}月${now.getDate()}日`;
-      document.getElementById('headerDate').textContent = dateStr;
+      document.getElementById('headerDate').textContent = `${weekdays[now.getDay()]} · ${now.getMonth() + 1}月${now.getDate()}日`;
     }
 
     function updateStats() {
@@ -1661,7 +1257,6 @@
       const weekSupps = state.supplements.filter(s => new Date(s.date) >= weekStart);
       const weekTrains = state.trainings.filter(t => new Date(t.date) >= weekStart);
       const weekDays = new Set([...weekSupps.map(s => s.date), ...weekTrains.map(t => t.date)]);
-
       document.getElementById('weekSuppCount').textContent = weekSupps.length;
       document.getElementById('weekTrainCount').textContent = weekTrains.length;
       document.getElementById('weekDaysCount').textContent = weekDays.size;
@@ -1703,30 +1298,19 @@
         </div>
       `;
 
-      if (state.lastSync) {
-        lastSyncEl.textContent = new Date(state.lastSync).toLocaleString('zh-CN');
-      }
+      if (state.lastSync) lastSyncEl.textContent = new Date(state.lastSync).toLocaleString('zh-CN');
     }
 
     // ==================== ACTIONS ====================
     function quickAddSupp(name, dosage) {
-      const record = {
-        id: generateId(),
-        name,
-        dosage,
-        time: formatTime(new Date()),
-        date: formatDate(new Date()),
-        createdAt: Date.now()
-      };
+      const record = { id: generateId(), name, dosage, time: formatTime(new Date()), date: formatDate(new Date()), createdAt: Date.now() };
       state.supplements.push(record);
       saveToStorage();
       updateTodayOverview();
       updateStats();
       showToast(`✅ ${name} 已记录`, 'success');
-
-      if (state.config.syncEnabled && state.isOnline) {
-        syncToGitHub();
-      }
+      resetInactivityTimer();
+      if (state.config.syncEnabled && state.isOnline) syncToGitHub();
     }
 
     function fillSupp(name, dosage) {
@@ -1737,7 +1321,6 @@
     function showExerciseSelector(muscle) {
       switchTab('train');
       showModal('training');
-
       const exercises = PRESET_EXERCISES[muscle] || [];
       const grid = document.getElementById('exerciseGrid');
       grid.innerHTML = exercises.map(e => `
@@ -1756,31 +1339,17 @@
     function saveSupplement() {
       const name = document.getElementById('suppName').value.trim();
       const dosage = document.getElementById('suppDosage').value.trim();
+      if (!name) { showToast('请输入补剂名称', 'error'); return; }
 
-      if (!name) {
-        showToast('请输入补剂名称', 'error');
-        return;
-      }
-
-      const record = {
-        id: generateId(),
-        name,
-        dosage: dosage || '—',
-        time: formatTime(new Date()),
-        date: formatDate(new Date()),
-        createdAt: Date.now()
-      };
-
+      const record = { id: generateId(), name, dosage: dosage || '—', time: formatTime(new Date()), date: formatDate(new Date()), createdAt: Date.now() };
       state.supplements.push(record);
       saveToStorage();
       updateTodayOverview();
       updateStats();
       closeModal();
       showToast(`✅ ${name} 已记录`, 'success');
-
-      if (state.config.syncEnabled && state.isOnline) {
-        syncToGitHub();
-      }
+      resetInactivityTimer();
+      if (state.config.syncEnabled && state.isOnline) syncToGitHub();
     }
 
     function saveTraining() {
@@ -1788,75 +1357,34 @@
       const weight = parseInt(document.getElementById('weightValue').textContent) || 0;
       const sets = parseInt(document.getElementById('setsValue').textContent) || 0;
       const reps = parseInt(document.getElementById('repsValue').textContent) || 0;
+      if (!exercise) { showToast('请选择或输入动作', 'error'); return; }
 
-      if (!exercise) {
-        showToast('请选择或输入动作', 'error');
-        return;
-      }
-
-      const record = {
-        id: generateId(),
-        exercise,
-        weight,
-        sets,
-        reps,
-        date: formatDate(new Date()),
-        time: formatTime(new Date()),
-        createdAt: Date.now()
-      };
-
+      const record = { id: generateId(), exercise, weight, sets, reps, date: formatDate(new Date()), time: formatTime(new Date()), createdAt: Date.now() };
       state.trainings.push(record);
       saveToStorage();
       updateTodayOverview();
       updateStats();
       closeModal();
       showToast(`✅ ${exercise} 已记录`, 'success');
-
-      // Reset
       state.selectedExercise = null;
       document.getElementById('customExercise').value = '';
-      document.getElementById('weightValue').textContent = '60';
-      document.getElementById('setsValue').textContent = '3';
-      document.getElementById('repsValue').textContent = '10';
-
-      if (state.config.syncEnabled && state.isOnline) {
-        syncToGitHub();
-      }
-    }
-
-    function startWorkout(planId) {
-      const plan = state.plans.find(p => p.id === planId);
-      if (!plan || !plan.exercises.length) return;
-
-      // For now, just show first exercise in modal
-      const exercise = plan.exercises[0];
-      state.selectedExercise = exercise;
-      switchTab('train');
-      showModal('training');
-      selectExercise(exercise);
-    }
-
-    function editNum(type) {
-      // Simple: just focus and let user type
+      resetInactivityTimer();
+      if (state.config.syncEnabled && state.isOnline) syncToGitHub();
     }
 
     // ==================== MODALS ====================
     function showModal(type) {
       const modal = document.getElementById('addModal');
       modal.classList.add('active');
-
-      if (type === 'supplements') {
-        switchTab('supp');
-      } else if (type === 'training') {
+      if (type === 'supplements') switchTab('supp');
+      else if (type === 'training') {
         switchTab('train');
-        // Populate exercise grid
         const grid = document.getElementById('exerciseGrid');
         const allExercises = Object.values(PRESET_EXERCISES).flat();
         grid.innerHTML = allExercises.map(e => `
           <button class="exercise-btn ${state.selectedExercise === e ? 'selected' : ''}" onclick="selectExercise('${e}')">${e}</button>
         `).join('');
       }
-
       document.getElementById('fab').classList.add('open');
     }
 
@@ -1866,99 +1394,60 @@
       switchTab('supp');
     }
 
-    function closeModalOnOverlay(e) {
-      if (e.target === e.currentTarget) {
-        closeModal();
-      }
-    }
+    function closeModalOnOverlay(e) { if (e.target === e.currentTarget) closeModal(); }
 
     function switchTab(tab) {
-      document.querySelectorAll('.tab').forEach((t, i) => {
-        t.classList.toggle('active', (tab === 'supp' && i === 0) || (tab === 'train' && i === 1));
-      });
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (tab === 'supp' && i === 0) || (tab === 'train' && i === 1)));
       document.getElementById('tabSupp').style.display = tab === 'supp' ? 'block' : 'none';
       document.getElementById('tabTrain').style.display = tab === 'train' ? 'block' : 'none';
     }
 
     function toggleFab() {
       const modal = document.getElementById('addModal');
-      const fab = document.getElementById('fab');
-
-      if (modal.classList.contains('active')) {
-        closeModal();
-      } else {
-        showModal('supplements');
-      }
+      if (modal.classList.contains('active')) closeModal();
+      else showModal('supplements');
     }
 
     function showDayDetail(date) {
       state.selectedDate = date;
       const supps = state.supplements.filter(s => s.date === date);
       const trains = state.trainings.filter(t => t.date === date);
-
       document.getElementById('dayModalTitle').textContent = date;
       document.getElementById('dayModalBody').innerHTML = `
-        ${supps.length === 0 && trains.length === 0 ? `
-          <div class="day-detail-empty">这天没有记录</div>
-        ` : `
-          ${supps.length > 0 ? `
-            <div class="section-title">💊 补剂</div>
-            ${supps.map(s => `
-              <div class="day-record">
-                <span class="day-record-icon">💊</span>
-                <div class="day-record-info">
-                  <div class="day-record-name">${s.name}</div>
-                  <div class="day-record-detail">${s.dosage}</div>
-                </div>
-                <span class="day-record-time">${s.time}</span>
-              </div>
-            `).join('')}
-          ` : ''}
-          ${trains.length > 0 ? `
-            <div class="section-title">🏋️ 训练</div>
-            ${trains.map(t => `
-              <div class="day-record">
-                <span class="day-record-icon">🏋️</span>
-                <div class="day-record-info">
-                  <div class="day-record-name">${t.exercise}</div>
-                  <div class="day-record-detail">${t.weight}kg × ${t.sets}组 × ${t.reps}次</div>
-                </div>
-                <span class="day-record-time">${t.time}</span>
-              </div>
-            `).join('')}
-          ` : ''}
+        ${supps.length === 0 && trains.length === 0 ? '<div class="day-detail-empty">这天没有记录</div>' : `
+          ${supps.length > 0 ? `<div class="section-title">💊 补剂</div>${supps.map(s => `
+            <div class="day-record"><span class="day-record-icon">💊</span>
+              <div class="day-record-info"><div class="day-record-name">${s.name}</div><div class="day-record-detail">${s.dosage}</div></div>
+              <span class="day-record-time">${s.time}</span>
+            </div>`).join('')}` : ''}
+          ${trains.length > 0 ? `<div class="section-title">🏋️ 训练</div>${trains.map(t => `
+            <div class="day-record"><span class="day-record-icon">🏋️</span>
+              <div class="day-record-info"><div class="day-record-name">${t.exercise}</div><div class="day-record-detail">${t.weight}kg × ${t.sets}组 × ${t.reps}次</div></div>
+              <span class="day-record-time">${t.time}</span>
+            </div>`).join('')}` : ''}
         `}
       `;
       document.getElementById('dayModal').classList.add('active');
     }
 
-    function closeDayModal() {
-      document.getElementById('dayModal').classList.remove('active');
-    }
+    function closeDayModal() { document.getElementById('dayModal').classList.remove('active'); }
 
     // ==================== CALENDAR ====================
     function renderCalendar() {
       const year = state.currentMonth.getFullYear();
       const month = state.currentMonth.getMonth();
-
       document.getElementById('calendarMonth').textContent = `${year}年${month + 1}月`;
-
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       const startDow = firstDay.getDay();
       const totalDays = lastDay.getDate();
-
       const container = document.getElementById('calendarDays');
       let html = '';
-
-      // Previous month days
       const prevMonth = new Date(year, month, 0);
       for (let i = startDow - 1; i >= 0; i--) {
         const day = prevMonth.getDate() - i;
         html += `<div class="calendar-day other-month">${day}</div>`;
       }
-
-      // Current month days
       const today = formatDate(new Date());
       for (let d = 1; d <= totalDays; d++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -1966,84 +1455,52 @@
         const hasTrains = state.trainings.some(t => t.date === dateStr);
         const isToday = dateStr === today;
         const isSelected = dateStr === state.selectedDate;
-
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
         if (isSelected) classes += ' selected';
         if (hasSupps) classes += ' has-supplements';
         else if (hasTrains) classes += ' has-training';
-
         html += `<div class="${classes}" onclick="showDayDetail('${dateStr}')">${d}</div>`;
       }
-
-      // Next month days
       const remaining = 42 - (startDow + totalDays);
-      for (let i = 1; i <= remaining; i++) {
-        html += `<div class="calendar-day other-month">${i}</div>`;
-      }
-
+      for (let i = 1; i <= remaining; i++) html += `<div class="calendar-day other-month">${i}</div>`;
       container.innerHTML = html;
     }
 
-    function changeMonth(delta) {
-      state.currentMonth.setMonth(state.currentMonth.getMonth() + delta);
-      renderCalendar();
-    }
+    function changeMonth(delta) { state.currentMonth.setMonth(state.currentMonth.getMonth() + delta); renderCalendar(); }
 
     // ==================== NAVIGATION ====================
     function switchPage(page) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById(`page-${page}`).classList.add('active');
-      document.querySelectorAll('.nav-item')[page === 'record' ? 0 : page === 'plan' ? 1 : page === 'calendar' ? 2 : 3].classList.add('active');
+      const tabs = ['record', 'plan', 'calendar', 'profile'];
+      document.querySelectorAll('.nav-item')[tabs.indexOf(page)].classList.add('active');
+      resetInactivityTimer();
     }
 
     // ==================== GITHUB SYNC ====================
     async function syncToGitHub() {
       if (!state.config.githubToken || !state.isOnline) return;
-
       const syncStatus = document.getElementById('syncStatus');
       syncStatus.className = 'sync-status syncing';
       syncStatus.textContent = '同步中...';
-
       try {
-        const headers = {
-          'Authorization': `Bearer ${state.config.githubToken}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        };
-
-        // Group records by date
-        const suppByDate = {};
-        const trainByDate = {};
-
-        state.supplements.forEach(s => {
-          if (!suppByDate[s.date]) suppByDate[s.date] = [];
-          suppByDate[s.date].push(s);
-        });
-
-        state.trainings.forEach(t => {
-          if (!trainByDate[t.date]) trainByDate[t.date] = [];
-          trainByDate[t.date].push(t);
-        });
-
-        // Sync supplement files
+        const headers = { 'Authorization': `Bearer ${state.config.githubToken}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
+        const suppByDate = {}, trainByDate = {};
+        state.supplements.forEach(s => { if (!suppByDate[s.date]) suppByDate[s.date] = []; suppByDate[s.date].push(s); });
+        state.trainings.forEach(t => { if (!trainByDate[t.date]) trainByDate[t.date] = []; trainByDate[t.date].push(t); });
         for (const [date, records] of Object.entries(suppByDate)) {
           await syncFile(`健身/日志/补剂_${date}.md`, formatSupplementFile(date, records), headers);
         }
-
-        // Sync training files
         for (const [date, records] of Object.entries(trainByDate)) {
           await syncFile(`健身/日志/训练_${date}.md`, formatTrainingFile(date, records), headers);
         }
-
         state.lastSync = Date.now();
         saveToStorage();
-
         syncStatus.className = 'sync-status synced';
         syncStatus.textContent = '✓ 已同步';
         document.getElementById('lastSync').textContent = new Date().toLocaleString('zh-CN');
-
       } catch (err) {
         console.error('Sync error:', err);
         syncStatus.className = 'sync-status error';
@@ -2054,76 +1511,40 @@
 
     async function syncFile(path, content, headers) {
       const { owner, repo } = state.config;
-
-      // Check if file exists
       let sha;
       try {
         const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers });
-        if (resp.ok) {
-          const data = await resp.json();
-          sha = data.sha;
-        }
+        if (resp.ok) { const data = await resp.json(); sha = data.sha; }
       } catch (e) {}
-
-      // Create/Update file
-      const body = {
-        message: `sync: ${path}`,
-        content: btoa(unescape(encodeURIComponent(content)))
-      };
+      const body = { message: `sync: ${path}`, content: btoa(unescape(encodeURIComponent(content))) };
       if (sha) body.sha = sha;
-
-      await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify(body)
-      });
+      await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { method: 'PUT', headers, body: JSON.stringify(body) });
     }
 
     function formatSupplementFile(date, records) {
-      return `# 补剂记录 — ${date}
-
-| 时间 | 补剂 | 剂量 |
-|------|------|------|
-${records.map(r => `| ${r.time} | ${r.name} | ${r.dosage} |`).join('\n')}
-
-<!-- sync: ${new Date().toISOString()} -->
-`;
+      return `# 补剂记录 — ${date}\n\n| 时间 | 补剂 | 剂量 |\n|------|------|------|\n${records.map(r => `| ${r.time} | ${r.name} | ${r.dosage} |`).join('\n')}\n\n<!-- sync: ${new Date().toISOString()} -->\n`;
     }
 
     function formatTrainingFile(date, records) {
-      return `# 训练记录 — ${date}
-
-| 时间 | 动作 | 重量 | 组 | 次数 |
-|------|------|------|-----|------|
-${records.map(r => `| ${r.time} | ${r.exercise} | ${r.weight}kg | ${r.sets} | ${r.reps} |`).join('\n')}
-
-<!-- sync: ${new Date().toISOString()} -->
-`;
+      return `# 训练记录 — ${date}\n\n| 时间 | 动作 | 重量 | 组 | 次数 |\n|------|------|------|-----|------|\n${records.map(r => `| ${r.time} | ${r.exercise} | ${r.weight}kg | ${r.sets} | ${r.reps} |`).join('\n')}\n\n<!-- sync: ${new Date().toISOString()} -->\n`;
     }
 
     // ==================== CONFIG ====================
     function saveGitHubToken() {
       const token = document.getElementById('githubTokenInput').value.trim();
-      if (!token) {
-        showToast('请输入 Token', 'error');
-        return;
-      }
+      if (!token) { showToast('请输入 Token', 'error'); return; }
       state.config.githubToken = token;
       state.config.syncEnabled = true;
       saveToStorage();
       checkGitHubConfig();
       showToast('✅ 配置已保存', 'success');
-
-      // Test sync
       syncToGitHub();
     }
 
     function editGitHubToken() {
       const container = document.getElementById('setupSection');
       container.innerHTML = `
-        <div class="setup-info">
-          <p>更新 GitHub Token</p>
-        </div>
+        <div class="setup-info"><p>更新 GitHub Token</p></div>
         <div class="profile-card">
           <input type="password" class="profile-input" id="githubTokenInput" placeholder="输入新 Token">
           <button class="btn btn-primary" onclick="saveGitHubToken()">保存</button>
@@ -2133,14 +1554,56 @@ ${records.map(r => `| ${r.time} | ${r.exercise} | ${r.weight}kg | ${r.sets} | ${
       document.getElementById('githubTokenInput').focus();
     }
 
+    function changePassword() {
+      const container = document.getElementById('setupSection');
+      container.innerHTML = `
+        <div class="setup-info"><p>修改主密码</p></div>
+        <div class="profile-card">
+          <div class="form-group">
+            <label class="form-label">当前密码</label>
+            <div class="password-input-wrap">
+              <input type="password" class="profile-input" id="currentPassword" placeholder="当前密码">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">新密码</label>
+            <div class="password-input-wrap">
+              <input type="password" class="profile-input" id="newPassword" placeholder="新密码（8位以上）">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">确认新密码</label>
+            <div class="password-input-wrap">
+              <input type="password" class="profile-input" id="newPasswordConfirm" placeholder="再次输入新密码">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="handlePasswordChange()">修改密码</button>
+          <button class="btn btn-secondary" onclick="checkGitHubConfig()" style="margin-top:8px">取消</button>
+        </div>
+      `;
+    }
+
+    async function handlePasswordChange() {
+      const current = document.getElementById('currentPassword').value;
+      const newPass = document.getElementById('newPassword').value;
+      const confirm = document.getElementById('newPasswordConfirm').value;
+
+      const hash = await sha256(current + authState.salt);
+      if (hash !== authState.passwordHash) { showToast('当前密码错误', 'error'); return; }
+      if (newPass !== confirm) { showToast('两次输入的新密码不一致', 'error'); return; }
+
+      const { score } = checkPasswordStrength(newPass);
+      if (score < 4) { showToast('新密码强度不足', 'error'); return; }
+
+      authState.passwordHash = await sha256(newPass + authState.salt);
+      saveAuthState();
+      showToast('✅ 密码已修改', 'success');
+      checkGitHubConfig();
+    }
+
     // ==================== EXPORT/CLEAR ====================
     function exportData() {
-      const data = {
-        supplements: state.supplements,
-        trainings: state.trainings,
-        plans: state.plans,
-        exportedAt: new Date().toISOString()
-      };
+      const data = { supplements: state.supplements, trainings: state.trainings, plans: state.plans, exportedAt: new Date().toISOString() };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2149,58 +1612,30 @@ ${records.map(r => `| ${r.time} | ${r.exercise} | ${r.weight}kg | ${r.sets} | ${
       a.click();
       URL.revokeObjectURL(url);
       showToast('📤 数据已导出', 'success');
+      resetInactivityTimer();
     }
 
     function clearLocalData() {
       if (confirm('确定要清除所有本地数据吗？此操作不可恢复。')) {
         localStorage.removeItem('fitnessData');
+        localStorage.removeItem('fitnessAuth');
         state.supplements = [];
         state.trainings = [];
         state.plans = DEFAULT_PLANS;
         state.config.githubToken = '';
         state.lastSync = null;
-        checkGitHubConfig();
-        updateTodayOverview();
-        updateStats();
-        renderCalendar();
-        showToast('🗑️ 数据已清除', 'success');
+        authState = { isSetup: false, passwordHash: '', salt: '', biometricCredentialId: null, attempts: 0, lockoutUntil: 0, sessionStart: 0, lastActivity: 0 };
+        location.reload();
       }
     }
 
     // ==================== UTILS ====================
-    function generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
-
-    function formatDate(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
-
-    function formatTime(date) {
-      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    }
-
-    function getWeekday() {
-      const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-      return days[new Date().getDay()];
-    }
-
-    function getWeekStart() {
-      const now = new Date();
-      const day = now.getDay();
-      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      return new Date(now.setDate(diff));
-    }
-
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = `toast ${type} show`;
-      setTimeout(() => toast.classList.remove('show'), 2500);
-    }
+    function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+    function formatDate(date) { const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
+    function formatTime(date) { return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`; }
+    function getWeekday() { const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']; return days[new Date().getDay()]; }
+    function getWeekStart() { const now = new Date(); const day = now.getDay(); const diff = now.getDate() - day + (day === 0 ? -6 : 1); return new Date(now.setDate(diff)); }
+    function showToast(message, type = 'success') { const toast = document.getElementById('toast'); toast.textContent = message; toast.className = `toast ${type} show`; setTimeout(() => toast.classList.remove('show'), 2500); }
 
     // ==================== START ====================
     init();
