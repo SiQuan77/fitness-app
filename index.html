@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0D0D0F">
+  <title>健身记录</title>
+  <style>
+    :root {
+      --bg-primary: #0D0D0F;
+      --bg-card: #1A1A1E;
+      --bg-card-hover: #222226;
+      --accent-primary: #00D4AA;
+      --accent-warm: #FF6B35;
+      --accent-blue: #4A9EFF;
+      --accent-purple: #A855F7;
+      --text-primary: #FFFFFF;
+      --text-secondary: #8B8B94;
+      --text-muted: #4A4A52;
+      --border: #2A2A2E;
+      --success: #22C55E;
+      --error: #EF4444;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: "SF Pro Display", -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 16px;
+      line-height: 1.5;
+      touch-action: manipulation;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Pages */
+    .page {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px;
+      padding-bottom: calc(80px + var(--safe-bottom));
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .page.active {
+      display: flex;
+      flex-direction: column;
+      animation: slideIn 200ms ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 0 4px;
+    }
+
+    .header-date {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .header-weather {
+      font-size: 24px;
+    }
+
+    /* Overview Cards */
+    .overview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .overview-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid var(--border);
+      transition: transform 100ms, background 100ms;
+    }
+
+    .overview-card:active {
+      transform: scale(0.98);
+      background: var(--bg-card-hover);
+    }
+
+    .overview-icon {
+      font-size: 24px;
+    }
+
+    .overview-count {
+      font-size: 32px;
+      font-weight: 700;
+      font-family: "SF Mono", "JetBrains Mono", monospace;
+    }
+
+    .overview-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .overview-card.supplements .overview-count { color: var(--accent-purple); }
+    .overview-card.training .overview-count { color: var(--accent-blue); }
+
+    /* Section */
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      padding: 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Quick Buttons */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .quick-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: transform 100ms, background 100ms, border-color 100ms;
+      min-height: 80px;
+    }
+
+    .quick-btn:active {
+      transform: scale(0.95);
+      background: var(--bg-card-hover);
+    }
+
+    .quick-btn.supplement {
+      border-color: rgba(168, 85, 247, 0.3);
+    }
+
+    .quick-btn.supplement:active {
+      border-color: var(--accent-purple);
+    }
+
+    .quick-btn.exercise {
+      border-color: rgba(74, 158, 255, 0.3);
+    }
+
+    .quick-btn.exercise:active {
+      border-color: var(--accent-blue);
+    }
+
+    .quick-btn-icon {
+      font-size: 24px;
+    }
+
+    .quick-btn-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    /* Floating Add Button */
+    .fab {
+      position: fixed;
+      bottom: calc(80px + var(--safe-bottom) + 16px);
+      right: 16px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      color: var(--bg-primary);
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 212, 170, 0.4);
+      transition: transform 150ms, box-shadow 150ms;
+      z-index: 100;
+      border: none;
+    }
+
+    .fab:active {
+      transform: scale(0.92);
+    }
+
+    .fab.open {
+      transform: rotate(45deg);
+      box-shadow: 0 2px 10px rgba(0, 212, 170, 0.3);
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: rgba(13, 13, 15, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 8px 0;
+      padding-bottom: calc(8px + var(--safe-bottom));
+      z-index: 200;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
+      cursor: pointer;
+      transition: opacity 150ms;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+    }
+
+    .nav-item.active {
+      color: var(--accent-primary);
+    }
+
+    .nav-item-icon {
+      font-size: 22px;
+    }
+
+    .nav-item-label {
+      font-size: 11px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 300;
+      opacity: 0;
+      transition: opacity 200ms;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 250ms ease-out;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+      z-index: 1;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-primary);
+      border: none;
+      color: var(--text-secondary);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 150ms;
+      text-align: center;
+    }
+
+    .tab.active {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: var(--bg-primary);
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 16px;
+      outline: none;
+      transition: border-color 150ms;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent-primary);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .form-row .form-group {
+      margin-bottom: 0;
+    }
+
+    /* Number Input */
+    .num-input {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .num-input-value {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: "SF Mono", "JetBrains Mono", monospace;
+      color: var(--accent-primary);
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      min-width: 80px;
+      text-align: center;
+      transition: border-color 150ms;
+    }
+
+    .num-input-value:focus {
+      border-color: var(--accent-primary);
+      outline: none;
+    }
+
+    .num-input-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 100ms, opacity 100ms;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: var(--bg-primary);
+    }
+
+    .btn-secondary {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    /* Exercise Selector */
+    .exercise-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .exercise-btn {
+      padding: 14px 12px;
+      border-radius: 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 150ms;
+      text-align: center;
+    }
+
+    .exercise-btn:active {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-blue);
+    }
+
+    .exercise-btn.selected {
+      background: rgba(74, 158, 255, 0.15);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    /* Calendar */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .calendar-month {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .calendar-nav {
+      display: flex;
+      gap: 8px;
+    }
+
+    .calendar-nav-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .calendar-weekday {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 8px 0;
+    }
+
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 150ms;
+      position: relative;
+      gap: 2px;
+    }
+
+    .calendar-day.other-month {
+      color: var(--text-muted);
+    }
+
+    .calendar-day.today {
+      border: 2px solid var(--accent-primary);
+    }
+
+    .calendar-day.selected {
+      background: var(--accent-primary);
+      color: var(--bg-primary);
+    }
+
+    .calendar-day.has-records::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+    }
+
+    .calendar-day.has-supplements::after { background: var(--accent-purple); }
+    .calendar-day.has-training::after { background: var(--accent-blue); }
+
+    /* Day Detail */
+    .day-detail {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .day-detail-header {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .day-detail-empty {
+      color: var(--text-muted);
+      font-size: 14px;
+      text-align: center;
+      padding: 24px 0;
+    }
+
+    .day-record {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .day-record:last-child {
+      border-bottom: none;
+    }
+
+    .day-record-icon {
+      font-size: 20px;
+    }
+
+    .day-record-info {
+      flex: 1;
+    }
+
+    .day-record-name {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .day-record-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .day-record-time {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: "SF Mono", monospace;
+    }
+
+    /* Plan Page */
+    .plan-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .plan-card:active {
+      transform: scale(0.98);
+    }
+
+    .plan-card.active {
+      border-color: var(--accent-primary);
+    }
+
+    .plan-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .plan-icon {
+      font-size: 28px;
+    }
+
+    .plan-info {
+      flex: 1;
+    }
+
+    .plan-name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .plan-count {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .plan-exercises {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .plan-tag {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+    }
+
+    /* Profile Page */
+    .profile-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .profile-row:last-child {
+      border-bottom: none;
+    }
+
+    .profile-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .profile-value {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .sync-status.synced { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+    .sync-status.syncing { background: rgba(74, 158, 255, 0.15); color: var(--accent-blue); }
+    .sync-status.offline { background: rgba(139, 139, 148, 0.15); color: var(--text-muted); }
+    .sync-status.error { background: rgba(239, 68, 68, 0.15); color: var(--error); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-item {
+      background: var(--bg-primary);
+      border-radius: 12px;
+      padding: 16px 12px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      font-family: "SF Mono", monospace;
+      color: var(--accent-primary);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(100px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 400;
+      opacity: 0;
+      transition: all 300ms ease-out;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success { background: var(--success); color: #000; }
+    .toast.error { background: var(--error); color: #fff; }
+
+    /* Input Modal */
+    .input-modal {
+      display: none;
+    }
+
+    .input-modal.active {
+      display: block;
+    }
+
+    /* Supple/Exercise Quick Actions in Modal */
+    .quick-add-section {
+      margin-bottom: 16px;
+    }
+
+    .quick-add-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .quick-add-item {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 150ms;
+    }
+
+    .quick-add-item:active {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-primary);
+    }
+
+    .quick-add-item span {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    /* Setup Page Styles */
+    .setup-info {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .setup-info p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .setup-info code {
+      background: var(--bg-primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "SF Mono", monospace;
+      font-size: 13px;
+    }
+
+    .profile-input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 12px;
+    }
+
+    .profile-input:focus {
+      border-color: var(--accent-primary);
+    }
+
+    .profile-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state-text {
+      font-size: 14px;
+    }
+
+    /* Offline Banner */
+    .offline-banner {
+      display: none;
+      background: rgba(139, 139, 148, 0.15);
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    .offline-banner.show {
+      display: block;
+    }
+
+    /* Swipe to delete */
+    .record-item {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-card);
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+
+    .record-delete {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 80px;
+      background: var(--error);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      transform: translateX(100%);
+      transition: transform 200ms ease-out;
+    }
+
+    .record-item.swiped .record-delete {
+      transform: translateX(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="offline-banner" id="offlineBanner">📴 离线模式 — 数据将在联网后同步</div>
+
+    <!-- Record Page -->
+    <div class="page active" id="page-record">
+      <div class="header">
+        <div>
+          <div class="header-date" id="headerDate">周一 · 4月18日</div>
+          <div class="header-title">健身记录</div>
+        </div>
+        <div class="header-weather">🌤️</div>
+      </div>
+
+      <div class="overview">
+        <div class="overview-card supplements" onclick="showModal('supplements')">
+          <div class="overview-icon">💊</div>
+          <div class="overview-count" id="todaySuppCount">0</div>
+          <div class="overview-label">今日补剂</div>
+        </div>
+        <div class="overview-card training" onclick="showModal('training')">
+          <div class="overview-icon">🏋️</div>
+          <div class="overview-count" id="todayTrainCount">0</div>
+          <div class="overview-label">今日训练</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">快速补剂</div>
+        <div class="quick-grid" id="quickSupplements"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">训练动作</div>
+        <div class="quick-grid" id="quickExercises"></div>
+      </div>
+    </div>
+
+    <!-- Plan Page -->
+    <div class="page" id="page-plan">
+      <div class="header">
+        <div>
+          <div class="header-title">训练计划</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">我的计划</div>
+        <div id="planList"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">今日训练</div>
+        <div id="todayPlanDetail"></div>
+      </div>
+    </div>
+
+    <!-- Calendar Page -->
+    <div class="page" id="page-calendar">
+      <div class="header">
+        <div class="calendar-header" style="width: 100%;">
+          <div class="calendar-month" id="calendarMonth">2024年4月</div>
+          <div class="calendar-nav">
+            <button class="calendar-nav-btn" onclick="changeMonth(-1)">‹</button>
+            <button class="calendar-nav-btn" onclick="changeMonth(1)">›</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="calendar-weekdays">
+        <div class="calendar-weekday">日</div>
+        <div class="calendar-weekday">一</div>
+        <div class="calendar-weekday">二</div>
+        <div class="calendar-weekday">三</div>
+        <div class="calendar-weekday">四</div>
+        <div class="calendar-weekday">五</div>
+        <div class="calendar-weekday">六</div>
+      </div>
+      <div class="calendar-days" id="calendarDays"></div>
+
+      <div id="dayDetail"></div>
+    </div>
+
+    <!-- Profile Page -->
+    <div class="page" id="page-profile">
+      <div class="header">
+        <div>
+          <div class="header-title">设置</div>
+        </div>
+      </div>
+
+      <div id="setupSection"></div>
+
+      <div class="section">
+        <div class="section-title">同步状态</div>
+        <div class="profile-card">
+          <div class="profile-row">
+            <span class="profile-label">GitHub</span>
+            <span class="profile-value">
+              <span class="sync-status" id="syncStatus">未配置</span>
+            </span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-label">最后同步</span>
+            <span class="profile-value" id="lastSync">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">本周统计</div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value" id="weekSuppCount">0</div>
+            <div class="stat-label">补剂次数</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="weekTrainCount">0</div>
+            <div class="stat-label">训练次数</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="weekDaysCount">0</div>
+            <div class="stat-label">活跃天数</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">操作</div>
+        <div class="profile-card">
+          <div class="profile-row" onclick="syncToGitHub()" style="cursor:pointer">
+            <span class="profile-label">🔄 手动同步</span>
+            <span class="profile-value">→</span>
+          </div>
+          <div class="profile-row" onclick="exportData()" style="cursor:pointer">
+            <span class="profile-label">📤 导出数据</span>
+            <span class="profile-value">→</span>
+          </div>
+          <div class="profile-row" onclick="clearLocalData()" style="cursor:pointer">
+            <span class="profile-label">🗑️ 清除本地数据</span>
+            <span class="profile-value">→</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="switchPage('record')">
+        <span class="nav-item-icon">📝</span>
+        <span class="nav-item-label">记录</span>
+      </button>
+      <button class="nav-item" onclick="switchPage('plan')">
+        <span class="nav-item-icon">📋</span>
+        <span class="nav-item-label">计划</span>
+      </button>
+      <button class="nav-item" onclick="switchPage('calendar')">
+        <span class="nav-item-icon">📅</span>
+        <span class="nav-item-label">日历</span>
+      </button>
+      <button class="nav-item" onclick="switchPage('profile')">
+        <span class="nav-item-icon">⚙️</span>
+        <span class="nav-item-label">我的</span>
+      </button>
+    </nav>
+
+    <!-- FAB -->
+    <button class="fab" id="fab" onclick="toggleFab()">+</button>
+  </div>
+
+  <!-- Add Modal -->
+  <div class="modal-overlay" id="addModal" onclick="closeModalOnOverlay(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">添加记录</span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabs" id="modalTabs">
+          <button class="tab active" onclick="switchTab('supp')">补剂</button>
+          <button class="tab" onclick="switchTab('train')">训练</button>
+        </div>
+
+        <!-- Supplement Tab -->
+        <div id="tabSupp">
+          <div class="quick-add-section">
+            <div class="form-label">快速添加</div>
+            <div class="quick-add-grid" id="quickAddSupps"></div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">或自定义</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">补剂名称</label>
+            <input type="text" class="form-input" id="suppName" placeholder="如：肌酸">
+          </div>
+          <div class="form-group">
+            <label class="form-label">剂量</label>
+            <input type="text" class="form-input" id="suppDosage" placeholder="如：5g、2粒">
+          </div>
+          <button class="btn btn-primary" onclick="saveSupplement()">保存</button>
+        </div>
+
+        <!-- Training Tab -->
+        <div id="tabTrain" style="display:none">
+          <div class="form-group">
+            <div class="form-label">选择动作</div>
+            <div class="exercise-grid" id="exerciseGrid"></div>
+          </div>
+          <div class="form-group" style="margin-top: 16px;">
+            <div class="form-label">自定义动作</div>
+            <input type="text" class="form-input" id="customExercise" placeholder="动作名称">
+          </div>
+          <div class="form-row">
+            <div class="form-group num-input">
+              <div class="num-input-value" id="weightValue" contenteditable="true" onclick="editNum('weight')">60</div>
+              <div class="num-input-label">重量(kg)</div>
+            </div>
+            <div class="form-group num-input">
+              <div class="num-input-value" id="setsValue" contenteditable="true" onclick="editNum('sets')">3</div>
+              <div class="num-input-label">组数</div>
+            </div>
+            <div class="form-group num-input">
+              <div class="num-input-value" id="repsValue" contenteditable="true" onclick="editNum('reps')">10</div>
+              <div class="num-input-label">次数</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveTraining()" style="margin-top: 16px;">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day Detail Modal -->
+  <div class="modal-overlay" id="dayModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="dayModalTitle">4月18日</span>
+        <button class="modal-close" onclick="closeDayModal()">✕</button>
+      </div>
+      <div class="modal-body" id="dayModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ==================== DATA ====================
+    const PRESET_SUPPLEMENTS = [
+      { name: '肌酸', icon: '💪', dosage: '5g' },
+      { name: '蛋白粉', icon: '🥤', dosage: '30g' },
+      { name: '复合维生素', icon: '💊', dosage: '1粒' },
+      { name: '鱼油', icon: '🐟', dosage: '2粒' },
+      { name: '氮泵', icon: '⚡', dosage: '1份' },
+      { name: '锌镁片', icon: '🔋', dosage: '1粒' }
+    ];
+
+    const PRESET_EXERCISES = {
+      '胸': ['卧推', '上斜卧推', '双杠臂屈伸', '飞鸟', '绳索夹胸'],
+      '背': ['引体向上', '高位下拉', '划船', '硬拉', 'T杆划船'],
+      '腿': ['深蹲', '腿举', '硬拉', '腿弯举', '腿伸展', '提踵'],
+      '肩': ['推举', '侧平举', '前平举', '面拉', '反向飞鸟'],
+      '手臂': ['二头弯举', '锤式弯举', '三头发射', '绳索下压'],
+      '核心': ['卷腹', '平板支撑', '悬垂举腿', '俄罗斯转体']
+    };
+
+    const MUSCLE_ICONS = {
+      '胸': '� 가슴',
+      '背': '🏋️',
+      '腿': '🦵',
+      '肩': '💪',
+      '手臂': '💪',
+      '核心': '🎯'
+    };
+
+    const DEFAULT_PLANS = [
+      { id: 'ppl-1', name: '推日 A', muscleGroup: '胸', exercises: ['卧推', '上斜卧推', '侧平举', '绳索夹胸', '三头发射'] },
+      { id: 'ppl-2', name: '拉日 A', muscleGroup: '背', exercises: ['引体向上', '高位下拉', '划船', '面拉', '二头弯举'] },
+      { id: 'ppl-3', name: '腿日 A', muscleGroup: '腿', exercises: ['深蹲', '腿举', '腿弯举', '提踵'] },
+      { id: 'ppl-4', name: '推日 B', muscleGroup: '肩', exercises: ['推举', '前平举', '侧平举', '反向飞鸟', '三头发射'] },
+      { id: 'ppl-5', name: '拉日 B', muscleGroup: '背', exercises: ['硬拉', 'T杆划船', '高位下拉', '二头弯举', '锤式弯举'] },
+      { id: 'ppl-6', name: '腿日 B', muscleGroup: '腿', exercises: ['硬拉', '腿伸展', '腿弯举', '提踵'] },
+      { id: 'rest', name: '休息日', muscleGroup: '休息', exercises: [] }
+    ];
+
+    // ==================== STATE ====================
+    let state = {
+      supplements: [],
+      trainings: [],
+      plans: [],
+      currentMonth: new Date(),
+      selectedDate: null,
+      selectedExercise: null,
+      config: {
+        githubToken: '',
+        githubOwner: 'SiQuan77',
+        githubRepo: 'knowledge-base',
+        syncEnabled: false
+      },
+      lastSync: null,
+      isOnline: navigator.onLine
+    };
+
+    // ==================== INIT ====================
+    function init() {
+      loadFromStorage();
+      renderQuickButtons();
+      renderPlanList();
+      updateTodayOverview();
+      renderCalendar();
+      updateHeaderDate();
+      checkGitHubConfig();
+      updateStats();
+      setupOfflineListeners();
+    }
+
+    function loadFromStorage() {
+      const saved = localStorage.getItem('fitnessData');
+      if (saved) {
+        const data = JSON.parse(saved);
+        state.supplements = data.supplements || [];
+        state.trainings = data.trainings || [];
+        state.plans = data.plans || DEFAULT_PLANS;
+        state.config = { ...state.config, ...data.config };
+        state.lastSync = data.lastSync;
+      } else {
+        state.plans = DEFAULT_PLANS;
+      }
+    }
+
+    function saveToStorage() {
+      const data = {
+        supplements: state.supplements,
+        trainings: state.trainings,
+        plans: state.plans,
+        config: state.config,
+        lastSync: state.lastSync
+      };
+      localStorage.setItem('fitnessData', JSON.stringify(data));
+    }
+
+    function setupOfflineListeners() {
+      window.addEventListener('online', () => {
+        state.isOnline = true;
+        document.getElementById('offlineBanner').classList.remove('show');
+        showToast('🌐 已恢复网络', 'success');
+        syncToGitHub();
+      });
+      window.addEventListener('offline', () => {
+        state.isOnline = false;
+        document.getElementById('offlineBanner').classList.add('show');
+      });
+      if (!navigator.onLine) {
+        document.getElementById('offlineBanner').classList.add('show');
+      }
+    }
+
+    // ==================== RENDER ====================
+    function renderQuickButtons() {
+      // Supplements
+      const suppGrid = document.getElementById('quickSupplements');
+      suppGrid.innerHTML = PRESET_SUPPLEMENTS.map(s => `
+        <button class="quick-btn supplement" onclick="quickAddSupp('${s.name}', '${s.dosage}')">
+          <span class="quick-btn-icon">${s.icon}</span>
+          <span class="quick-btn-label">${s.name}</span>
+        </button>
+      `).join('');
+
+      // Exercises
+      const muscleGroups = ['胸', '背', '腿', '肩'];
+      const exGrid = document.getElementById('quickExercises');
+      exGrid.innerHTML = muscleGroups.map(m => `
+        <button class="quick-btn exercise" onclick="showExerciseSelector('${m}')">
+          <span class="quick-btn-icon">${MUSCLE_ICONS[m]}</span>
+          <span class="quick-btn-label">${m}</span>
+        </button>
+      `).join('');
+
+      // Quick add in modal
+      const quickAddGrid = document.getElementById('quickAddSupps');
+      quickAddGrid.innerHTML = PRESET_SUPPLEMENTS.map(s => `
+        <div class="quick-add-item" onclick="fillSupp('${s.name}', '${s.dosage}')">
+          <span>${s.icon}</span>
+          ${s.name}
+        </div>
+      `).join('');
+    }
+
+    function renderPlanList() {
+      const container = document.getElementById('planList');
+      const today = getWeekday();
+      const todayPlan = state.plans.find(p => p.dayOfWeek === today) || state.plans[0];
+
+      container.innerHTML = state.plans.filter(p => p.muscleGroup !== '休息').map(plan => `
+        <div class="plan-card ${plan.id === todayPlan?.id ? 'active' : ''}" onclick="showPlanDetail('${plan.id}')">
+          <div class="plan-header">
+            <span class="plan-icon">${MUSCLE_ICONS[plan.muscleGroup] || '📋'}</span>
+            <div class="plan-info">
+              <div class="plan-name">${plan.name}</div>
+              <div class="plan-count">${plan.exercises.length} 个动作</div>
+            </div>
+          </div>
+          <div class="plan-exercises">
+            ${plan.exercises.slice(0, 4).map(e => `<span class="plan-tag">${e}</span>`).join('')}
+            ${plan.exercises.length > 4 ? `<span class="plan-tag">+${plan.exercises.length - 4}</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      // Today plan detail
+      const todayDetail = document.getElementById('todayPlanDetail');
+      if (todayPlan && todayPlan.exercises.length > 0) {
+        todayDetail.innerHTML = `
+          <div class="plan-card active">
+            <div class="plan-header">
+              <span class="plan-icon">${MUSCLE_ICONS[todayPlan.muscleGroup]}</span>
+              <div class="plan-info">
+                <div class="plan-name">${todayPlan.name}</div>
+                <div class="plan-count">点击开始训练</div>
+              </div>
+              <button class="btn btn-primary" style="width:auto;padding:10px 20px;" onclick="startWorkout('${todayPlan.id}')">开始</button>
+            </div>
+          </div>
+        `;
+      } else {
+        todayDetail.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">😴</div>
+            <div class="empty-state-text">今天休息日，好好恢复！</div>
+          </div>
+        `;
+      }
+    }
+
+    function updateTodayOverview() {
+      const today = formatDate(new Date());
+      const todaySupps = state.supplements.filter(s => s.date === today);
+      const todayTrains = state.trainings.filter(t => t.date === today);
+
+      document.getElementById('todaySuppCount').textContent = todaySupps.length;
+      document.getElementById('todayTrainCount').textContent = todayTrains.length;
+    }
+
+    function updateHeaderDate() {
+      const now = new Date();
+      const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const dateStr = `${weekdays[now.getDay()]} · ${now.getMonth() + 1}月${now.getDate()}日`;
+      document.getElementById('headerDate').textContent = dateStr;
+    }
+
+    function updateStats() {
+      const weekStart = getWeekStart();
+      const weekSupps = state.supplements.filter(s => new Date(s.date) >= weekStart);
+      const weekTrains = state.trainings.filter(t => new Date(t.date) >= weekStart);
+      const weekDays = new Set([...weekSupps.map(s => s.date), ...weekTrains.map(t => t.date)]);
+
+      document.getElementById('weekSuppCount').textContent = weekSupps.length;
+      document.getElementById('weekTrainCount').textContent = weekTrains.length;
+      document.getElementById('weekDaysCount').textContent = weekDays.size;
+    }
+
+    function checkGitHubConfig() {
+      const container = document.getElementById('setupSection');
+      const syncStatus = document.getElementById('syncStatus');
+      const lastSyncEl = document.getElementById('lastSync');
+
+      if (!state.config.githubToken) {
+        container.innerHTML = `
+          <div class="setup-info">
+            <p>⚙️ 首次使用需要配置 GitHub Personal Access Token，用于同步数据到知识库。</p>
+            <p>1. 访问 GitHub Settings → Developer settings → Personal access tokens</p>
+            <p>2. 生成新令牌（classic），勾选 <code>repo</code> 权限</p>
+            <p>3. 复制令牌并粘贴到下方</p>
+          </div>
+          <div class="profile-card">
+            <input type="password" class="profile-input" id="githubTokenInput" placeholder="粘贴 GitHub Token">
+            <button class="btn btn-primary" onclick="saveGitHubToken()">保存并连接</button>
+          </div>
+        `;
+        syncStatus.className = 'sync-status offline';
+        syncStatus.textContent = '未配置';
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="profile-card">
+          <div class="profile-row">
+            <span class="profile-label">仓库</span>
+            <span class="profile-value">${state.config.githubOwner}/${state.config.githubRepo}</span>
+          </div>
+          <div class="profile-row" onclick="editGitHubToken()" style="cursor:pointer">
+            <span class="profile-label">Token</span>
+            <span class="profile-value">••••••••</span>
+          </div>
+        </div>
+      `;
+
+      if (state.lastSync) {
+        lastSyncEl.textContent = new Date(state.lastSync).toLocaleString('zh-CN');
+      }
+    }
+
+    // ==================== ACTIONS ====================
+    function quickAddSupp(name, dosage) {
+      const record = {
+        id: generateId(),
+        name,
+        dosage,
+        time: formatTime(new Date()),
+        date: formatDate(new Date()),
+        createdAt: Date.now()
+      };
+      state.supplements.push(record);
+      saveToStorage();
+      updateTodayOverview();
+      updateStats();
+      showToast(`✅ ${name} 已记录`, 'success');
+
+      if (state.config.syncEnabled && state.isOnline) {
+        syncToGitHub();
+      }
+    }
+
+    function fillSupp(name, dosage) {
+      document.getElementById('suppName').value = name;
+      document.getElementById('suppDosage').value = dosage;
+    }
+
+    function showExerciseSelector(muscle) {
+      switchTab('train');
+      showModal('training');
+
+      const exercises = PRESET_EXERCISES[muscle] || [];
+      const grid = document.getElementById('exerciseGrid');
+      grid.innerHTML = exercises.map(e => `
+        <button class="exercise-btn ${state.selectedExercise === e ? 'selected' : ''}" onclick="selectExercise('${e}')">${e}</button>
+      `).join('');
+    }
+
+    function selectExercise(name) {
+      state.selectedExercise = name;
+      document.getElementById('customExercise').value = name;
+      document.querySelectorAll('.exercise-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.textContent.trim() === name);
+      });
+    }
+
+    function saveSupplement() {
+      const name = document.getElementById('suppName').value.trim();
+      const dosage = document.getElementById('suppDosage').value.trim();
+
+      if (!name) {
+        showToast('请输入补剂名称', 'error');
+        return;
+      }
+
+      const record = {
+        id: generateId(),
+        name,
+        dosage: dosage || '—',
+        time: formatTime(new Date()),
+        date: formatDate(new Date()),
+        createdAt: Date.now()
+      };
+
+      state.supplements.push(record);
+      saveToStorage();
+      updateTodayOverview();
+      updateStats();
+      closeModal();
+      showToast(`✅ ${name} 已记录`, 'success');
+
+      if (state.config.syncEnabled && state.isOnline) {
+        syncToGitHub();
+      }
+    }
+
+    function saveTraining() {
+      const exercise = document.getElementById('customExercise').value.trim() || state.selectedExercise;
+      const weight = parseInt(document.getElementById('weightValue').textContent) || 0;
+      const sets = parseInt(document.getElementById('setsValue').textContent) || 0;
+      const reps = parseInt(document.getElementById('repsValue').textContent) || 0;
+
+      if (!exercise) {
+        showToast('请选择或输入动作', 'error');
+        return;
+      }
+
+      const record = {
+        id: generateId(),
+        exercise,
+        weight,
+        sets,
+        reps,
+        date: formatDate(new Date()),
+        time: formatTime(new Date()),
+        createdAt: Date.now()
+      };
+
+      state.trainings.push(record);
+      saveToStorage();
+      updateTodayOverview();
+      updateStats();
+      closeModal();
+      showToast(`✅ ${exercise} 已记录`, 'success');
+
+      // Reset
+      state.selectedExercise = null;
+      document.getElementById('customExercise').value = '';
+      document.getElementById('weightValue').textContent = '60';
+      document.getElementById('setsValue').textContent = '3';
+      document.getElementById('repsValue').textContent = '10';
+
+      if (state.config.syncEnabled && state.isOnline) {
+        syncToGitHub();
+      }
+    }
+
+    function startWorkout(planId) {
+      const plan = state.plans.find(p => p.id === planId);
+      if (!plan || !plan.exercises.length) return;
+
+      // For now, just show first exercise in modal
+      const exercise = plan.exercises[0];
+      state.selectedExercise = exercise;
+      switchTab('train');
+      showModal('training');
+      selectExercise(exercise);
+    }
+
+    function editNum(type) {
+      // Simple: just focus and let user type
+    }
+
+    // ==================== MODALS ====================
+    function showModal(type) {
+      const modal = document.getElementById('addModal');
+      modal.classList.add('active');
+
+      if (type === 'supplements') {
+        switchTab('supp');
+      } else if (type === 'training') {
+        switchTab('train');
+        // Populate exercise grid
+        const grid = document.getElementById('exerciseGrid');
+        const allExercises = Object.values(PRESET_EXERCISES).flat();
+        grid.innerHTML = allExercises.map(e => `
+          <button class="exercise-btn ${state.selectedExercise === e ? 'selected' : ''}" onclick="selectExercise('${e}')">${e}</button>
+        `).join('');
+      }
+
+      document.getElementById('fab').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('addModal').classList.remove('active');
+      document.getElementById('fab').classList.remove('open');
+      switchTab('supp');
+    }
+
+    function closeModalOnOverlay(e) {
+      if (e.target === e.currentTarget) {
+        closeModal();
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', (tab === 'supp' && i === 0) || (tab === 'train' && i === 1));
+      });
+      document.getElementById('tabSupp').style.display = tab === 'supp' ? 'block' : 'none';
+      document.getElementById('tabTrain').style.display = tab === 'train' ? 'block' : 'none';
+    }
+
+    function toggleFab() {
+      const modal = document.getElementById('addModal');
+      const fab = document.getElementById('fab');
+
+      if (modal.classList.contains('active')) {
+        closeModal();
+      } else {
+        showModal('supplements');
+      }
+    }
+
+    function showDayDetail(date) {
+      state.selectedDate = date;
+      const supps = state.supplements.filter(s => s.date === date);
+      const trains = state.trainings.filter(t => t.date === date);
+
+      document.getElementById('dayModalTitle').textContent = date;
+      document.getElementById('dayModalBody').innerHTML = `
+        ${supps.length === 0 && trains.length === 0 ? `
+          <div class="day-detail-empty">这天没有记录</div>
+        ` : `
+          ${supps.length > 0 ? `
+            <div class="section-title">💊 补剂</div>
+            ${supps.map(s => `
+              <div class="day-record">
+                <span class="day-record-icon">💊</span>
+                <div class="day-record-info">
+                  <div class="day-record-name">${s.name}</div>
+                  <div class="day-record-detail">${s.dosage}</div>
+                </div>
+                <span class="day-record-time">${s.time}</span>
+              </div>
+            `).join('')}
+          ` : ''}
+          ${trains.length > 0 ? `
+            <div class="section-title">🏋️ 训练</div>
+            ${trains.map(t => `
+              <div class="day-record">
+                <span class="day-record-icon">🏋️</span>
+                <div class="day-record-info">
+                  <div class="day-record-name">${t.exercise}</div>
+                  <div class="day-record-detail">${t.weight}kg × ${t.sets}组 × ${t.reps}次</div>
+                </div>
+                <span class="day-record-time">${t.time}</span>
+              </div>
+            `).join('')}
+          ` : ''}
+        `}
+      `;
+      document.getElementById('dayModal').classList.add('active');
+    }
+
+    function closeDayModal() {
+      document.getElementById('dayModal').classList.remove('active');
+    }
+
+    // ==================== CALENDAR ====================
+    function renderCalendar() {
+      const year = state.currentMonth.getFullYear();
+      const month = state.currentMonth.getMonth();
+
+      document.getElementById('calendarMonth').textContent = `${year}年${month + 1}月`;
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDow = firstDay.getDay();
+      const totalDays = lastDay.getDate();
+
+      const container = document.getElementById('calendarDays');
+      let html = '';
+
+      // Previous month days
+      const prevMonth = new Date(year, month, 0);
+      for (let i = startDow - 1; i >= 0; i--) {
+        const day = prevMonth.getDate() - i;
+        html += `<div class="calendar-day other-month">${day}</div>`;
+      }
+
+      // Current month days
+      const today = formatDate(new Date());
+      for (let d = 1; d <= totalDays; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const hasSupps = state.supplements.some(s => s.date === dateStr);
+        const hasTrains = state.trainings.some(t => t.date === dateStr);
+        const isToday = dateStr === today;
+        const isSelected = dateStr === state.selectedDate;
+
+        let classes = 'calendar-day';
+        if (isToday) classes += ' today';
+        if (isSelected) classes += ' selected';
+        if (hasSupps) classes += ' has-supplements';
+        else if (hasTrains) classes += ' has-training';
+
+        html += `<div class="${classes}" onclick="showDayDetail('${dateStr}')">${d}</div>`;
+      }
+
+      // Next month days
+      const remaining = 42 - (startDow + totalDays);
+      for (let i = 1; i <= remaining; i++) {
+        html += `<div class="calendar-day other-month">${i}</div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function changeMonth(delta) {
+      state.currentMonth.setMonth(state.currentMonth.getMonth() + delta);
+      renderCalendar();
+    }
+
+    // ==================== NAVIGATION ====================
+    function switchPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById(`page-${page}`).classList.add('active');
+      document.querySelectorAll('.nav-item')[page === 'record' ? 0 : page === 'plan' ? 1 : page === 'calendar' ? 2 : 3].classList.add('active');
+    }
+
+    // ==================== GITHUB SYNC ====================
+    async function syncToGitHub() {
+      if (!state.config.githubToken || !state.isOnline) return;
+
+      const syncStatus = document.getElementById('syncStatus');
+      syncStatus.className = 'sync-status syncing';
+      syncStatus.textContent = '同步中...';
+
+      try {
+        const headers = {
+          'Authorization': `Bearer ${state.config.githubToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        };
+
+        // Group records by date
+        const suppByDate = {};
+        const trainByDate = {};
+
+        state.supplements.forEach(s => {
+          if (!suppByDate[s.date]) suppByDate[s.date] = [];
+          suppByDate[s.date].push(s);
+        });
+
+        state.trainings.forEach(t => {
+          if (!trainByDate[t.date]) trainByDate[t.date] = [];
+          trainByDate[t.date].push(t);
+        });
+
+        // Sync supplement files
+        for (const [date, records] of Object.entries(suppByDate)) {
+          await syncFile(`健身/日志/补剂_${date}.md`, formatSupplementFile(date, records), headers);
+        }
+
+        // Sync training files
+        for (const [date, records] of Object.entries(trainByDate)) {
+          await syncFile(`健身/日志/训练_${date}.md`, formatTrainingFile(date, records), headers);
+        }
+
+        state.lastSync = Date.now();
+        saveToStorage();
+
+        syncStatus.className = 'sync-status synced';
+        syncStatus.textContent = '✓ 已同步';
+        document.getElementById('lastSync').textContent = new Date().toLocaleString('zh-CN');
+
+      } catch (err) {
+        console.error('Sync error:', err);
+        syncStatus.className = 'sync-status error';
+        syncStatus.textContent = '✕ 同步失败';
+        showToast('同步失败，请检查 Token', 'error');
+      }
+    }
+
+    async function syncFile(path, content, headers) {
+      const { owner, repo } = state.config;
+
+      // Check if file exists
+      let sha;
+      try {
+        const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers });
+        if (resp.ok) {
+          const data = await resp.json();
+          sha = data.sha;
+        }
+      } catch (e) {}
+
+      // Create/Update file
+      const body = {
+        message: `sync: ${path}`,
+        content: btoa(unescape(encodeURIComponent(content)))
+      };
+      if (sha) body.sha = sha;
+
+      await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body)
+      });
+    }
+
+    function formatSupplementFile(date, records) {
+      return `# 补剂记录 — ${date}
+
+| 时间 | 补剂 | 剂量 |
+|------|------|------|
+${records.map(r => `| ${r.time} | ${r.name} | ${r.dosage} |`).join('\n')}
+
+<!-- sync: ${new Date().toISOString()} -->
+`;
+    }
+
+    function formatTrainingFile(date, records) {
+      return `# 训练记录 — ${date}
+
+| 时间 | 动作 | 重量 | 组 | 次数 |
+|------|------|------|-----|------|
+${records.map(r => `| ${r.time} | ${r.exercise} | ${r.weight}kg | ${r.sets} | ${r.reps} |`).join('\n')}
+
+<!-- sync: ${new Date().toISOString()} -->
+`;
+    }
+
+    // ==================== CONFIG ====================
+    function saveGitHubToken() {
+      const token = document.getElementById('githubTokenInput').value.trim();
+      if (!token) {
+        showToast('请输入 Token', 'error');
+        return;
+      }
+      state.config.githubToken = token;
+      state.config.syncEnabled = true;
+      saveToStorage();
+      checkGitHubConfig();
+      showToast('✅ 配置已保存', 'success');
+
+      // Test sync
+      syncToGitHub();
+    }
+
+    function editGitHubToken() {
+      const container = document.getElementById('setupSection');
+      container.innerHTML = `
+        <div class="setup-info">
+          <p>更新 GitHub Token</p>
+        </div>
+        <div class="profile-card">
+          <input type="password" class="profile-input" id="githubTokenInput" placeholder="输入新 Token">
+          <button class="btn btn-primary" onclick="saveGitHubToken()">保存</button>
+          <button class="btn btn-secondary" onclick="checkGitHubConfig()" style="margin-top:8px">取消</button>
+        </div>
+      `;
+      document.getElementById('githubTokenInput').focus();
+    }
+
+    // ==================== EXPORT/CLEAR ====================
+    function exportData() {
+      const data = {
+        supplements: state.supplements,
+        trainings: state.trainings,
+        plans: state.plans,
+        exportedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fitness_export_${formatDate(new Date())}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('📤 数据已导出', 'success');
+    }
+
+    function clearLocalData() {
+      if (confirm('确定要清除所有本地数据吗？此操作不可恢复。')) {
+        localStorage.removeItem('fitnessData');
+        state.supplements = [];
+        state.trainings = [];
+        state.plans = DEFAULT_PLANS;
+        state.config.githubToken = '';
+        state.lastSync = null;
+        checkGitHubConfig();
+        updateTodayOverview();
+        updateStats();
+        renderCalendar();
+        showToast('🗑️ 数据已清除', 'success');
+      }
+    }
+
+    // ==================== UTILS ====================
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatTime(date) {
+      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function getWeekday() {
+      const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      return days[new Date().getDay()];
+    }
+
+    function getWeekStart() {
+      const now = new Date();
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      return new Date(now.setDate(diff));
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // ==================== START ====================
+    init();
+  </script>
+</body>
+</html>
