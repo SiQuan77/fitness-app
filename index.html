@@ -691,47 +691,16 @@
 
   <script>
     // ==================== CRYPTO UTILITIES ====================
-    async function sha256(text) {
+    // PBKDF2 with 100,000 iterations - intentionally slow to resist brute force
+    async function deriveKeyHash(password, salt, iterations = 100000) {
       const encoder = new TextEncoder();
-      const data = encoder.encode(text);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    async function deriveKey(password, salt) {
-      const encoder = new TextEncoder();
-      const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
-      return crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: encoder.encode(salt), iterations: 100000, hash: 'SHA-256' },
+      const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
+      const bits = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt: encoder.encode(salt), iterations, hash: 'SHA-256' },
         keyMaterial,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt', 'decrypt']
+        256
       );
-    }
-
-    async function encryptData(data, password) {
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const key = await deriveKey(password, salt);
-      const encoder = new TextEncoder();
-      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(JSON.stringify(data)));
-      return {
-        salt: Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join(''),
-        iv: Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join(''),
-        data: Array.from(new Uint8Array(encrypted)).map(b => b.toString(16).padStart(2, '0')).join('')
-      };
-    }
-
-    async function decryptData(encryptedObj, password) {
-      const salt = new Uint8Array(encryptedObj.salt.match(/.{2}/g).map(b => parseInt(b, 16)));
-      const iv = new Uint8Array(encryptedObj.iv.match(/.{2}/g).map(b => parseInt(b, 16)));
-      const data = new Uint8Array(encryptedObj.data.match(/.{2}/g).map(b => parseInt(b, 16)));
-      const key = await deriveKey(password, salt);
-      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
-      const decoder = new TextDecoder();
-      return JSON.parse(decoder.decode(decrypted));
+      return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     // ==================== AUTH STATE ====================
@@ -875,10 +844,10 @@
         return;
       }
 
-      // Generate salt and hash
+      // Generate salt and derive key hash with PBKDF2 (100k iterations)
       const salt = crypto.getRandomValues(new Uint8Array(16));
       authState.salt = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
-      authState.passwordHash = await sha256(password + authState.salt);
+      authState.passwordHash = await deriveKeyHash(password, authState.salt);
       authState.isSetup = true;
       authState.attempts = 0;
       authState.sessionStart = Date.now();
@@ -901,7 +870,7 @@
       }
 
       const password = document.getElementById('loginPassword').value;
-      const hash = await sha256(password + authState.salt);
+      const hash = await deriveKeyHash(password, authState.salt);
 
       if (hash === authState.passwordHash) {
         authState.attempts = 0;
@@ -1588,14 +1557,14 @@
       const newPass = document.getElementById('newPassword').value;
       const confirm = document.getElementById('newPasswordConfirm').value;
 
-      const hash = await sha256(current + authState.salt);
+      const hash = await deriveKeyHash(current + authState.salt);
       if (hash !== authState.passwordHash) { showToast('当前密码错误', 'error'); return; }
       if (newPass !== confirm) { showToast('两次输入的新密码不一致', 'error'); return; }
 
       const { score } = checkPasswordStrength(newPass);
       if (score < 4) { showToast('新密码强度不足', 'error'); return; }
 
-      authState.passwordHash = await sha256(newPass + authState.salt);
+      authState.passwordHash = await deriveKeyHash(newPass, authState.salt);
       saveAuthState();
       showToast('✅ 密码已修改', 'success');
       checkGitHubConfig();
