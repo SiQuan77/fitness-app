@@ -958,9 +958,152 @@
     .record-item.swiped .record-delete {
       transform: translateX(0);
     }
+    /* Lock Screen */
+    .lock-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .lock-screen.hidden {
+      display: none;
+    }
+
+    .lock-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+    }
+
+    .lock-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .lock-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+
+    .pin-dots {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .pin-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      transition: all 150ms;
+    }
+
+    .pin-dot.filled {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    .pin-dot.error {
+      background: var(--error);
+      border-color: var(--error);
+    }
+
+    .pin-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      max-width: 280px;
+    }
+
+    .pin-key {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 28px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 100ms;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .pin-key:active {
+      transform: scale(0.9);
+      background: var(--bg-card-hover);
+    }
+
+    .pin-key.empty {
+      visibility: hidden;
+    }
+
+    .pin-key.action {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .lock-error {
+      color: var(--error);
+      font-size: 14px;
+      margin-top: 16px;
+      height: 20px;
+    }
+
+    .lock-setup {
+      text-align: center;
+    }
+
+    .lock-setup p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
   </style>
 </head>
 <body>
+  <!-- Lock Screen -->
+  <div class="lock-screen" id="lockScreen">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title">健身记录</div>
+    <div class="lock-subtitle" id="lockSubtitle">输入 PIN 码解锁</div>
+
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+    </div>
+
+    <div class="pin-keypad" id="pinKeypad">
+      <button class="pin-key" onclick="enterPin('1')">1</button>
+      <button class="pin-key" onclick="enterPin('2')">2</button>
+      <button class="pin-key" onclick="enterPin('3')">3</button>
+      <button class="pin-key" onclick="enterPin('4')">4</button>
+      <button class="pin-key" onclick="enterPin('5')">5</button>
+      <button class="pin-key" onclick="enterPin('6')">6</button>
+      <button class="pin-key" onclick="enterPin('7')">7</button>
+      <button class="pin-key" onclick="enterPin('8')">8</button>
+      <button class="pin-key" onclick="enterPin('9')">9</button>
+      <button class="pin-key empty"></button>
+      <button class="pin-key" onclick="enterPin('0')">0</button>
+      <button class="pin-key action" onclick="deletePin()">⌫</button>
+    </div>
+
+    <div class="lock-error" id="lockError"></div>
+  </div>
+
   <div class="app">
     <div class="offline-banner" id="offlineBanner">📴 离线模式 — 数据将在联网后同步</div>
 
@@ -1100,6 +1243,10 @@
           </div>
           <div class="profile-row" onclick="clearLocalData()" style="cursor:pointer">
             <span class="profile-label">🗑️ 清除本地数据</span>
+            <span class="profile-value">→</span>
+          </div>
+          <div class="profile-row" onclick="lockApp()" style="cursor:pointer">
+            <span class="profile-label">🔒 锁定应用</span>
             <span class="profile-value">→</span>
           </div>
         </div>
@@ -1247,7 +1394,10 @@
     ];
 
     // ==================== STATE ====================
+    const PIN_LENGTH = 4;
+    let currentPin = '';
     let state = {
+      pin: '',
       supplements: [],
       trainings: [],
       plans: [],
@@ -1264,9 +1414,77 @@
       isOnline: navigator.onLine
     };
 
-    // ==================== INIT ====================
-    function init() {
-      loadFromStorage();
+    // ==================== PIN LOCK ====================
+    function enterPin(digit) {
+      if (currentPin.length >= PIN_LENGTH) return;
+      currentPin += digit;
+      updatePinDots();
+
+      if (currentPin.length === PIN_LENGTH) {
+        if (!state.pin) {
+          // First time setup - confirm PIN
+          if (!state.pinConfirm) {
+            state.pinConfirm = currentPin;
+            document.getElementById('lockSubtitle').textContent = '再次输入以确认';
+            document.getElementById('lockError').textContent = '';
+            updatePinDots();
+            setTimeout(() => { currentPin = ''; updatePinDots(); }, 300);
+          } else {
+            if (currentPin === state.pinConfirm) {
+              state.pin = currentPin;
+              delete state.pinConfirm;
+              saveToStorage();
+              unlockApp();
+            } else {
+              showPinError('两次输入不一致，请重试');
+              state.pinConfirm = null;
+              document.getElementById('lockSubtitle').textContent = '设置 PIN 码';
+              setTimeout(() => { currentPin = ''; updatePinDots(); }, 800);
+            }
+          }
+        } else {
+          // Verify PIN
+          if (currentPin === state.pin) {
+            unlockApp();
+          } else {
+            showPinError('PIN 错误，请重试');
+            setTimeout(() => { currentPin = ''; updatePinDots(); }, 800);
+          }
+        }
+      }
+    }
+
+    function deletePin() {
+      if (currentPin.length > 0) {
+        currentPin = currentPin.slice(0, -1);
+        updatePinDots();
+      }
+    }
+
+    function updatePinDots() {
+      const dots = document.querySelectorAll('.pin-dot');
+      dots.forEach((dot, i) => {
+        dot.classList.remove('filled', 'error');
+        if (i < currentPin.length) {
+          dot.classList.add('filled');
+        }
+      });
+    }
+
+    function showPinError(msg) {
+      const dots = document.querySelectorAll('.pin-dot');
+      dots.forEach(dot => dot.classList.add('error'));
+      document.getElementById('lockError').textContent = msg;
+      setTimeout(() => {
+        dots.forEach(dot => dot.classList.remove('error'));
+        document.getElementById('lockError').textContent = '';
+      }, 800);
+    }
+
+    function unlockApp() {
+      document.getElementById('lockScreen').classList.add('hidden');
+      document.querySelector('.app').style.display = 'flex';
+      // Initialize main app
       renderQuickButtons();
       renderPlanList();
       updateTodayOverview();
@@ -1274,13 +1492,40 @@
       updateHeaderDate();
       checkGitHubConfig();
       updateStats();
+      showToast('🔓 已解锁', 'success');
+    }
+
+    function lockApp() {
+      currentPin = '';
+      updatePinDots();
+      document.getElementById('lockScreen').classList.remove('hidden');
+    }
+
+    // ==================== INIT ====================
+    function init() {
+      loadFromStorage();
       setupOfflineListeners();
+
+      // Show lock screen if PIN is set
+      if (state.pin) {
+        document.getElementById('lockScreen').classList.remove('hidden');
+        document.getElementById('lockSubtitle').textContent = '输入 PIN 码解锁';
+        currentPin = '';
+        updatePinDots();
+        // Hide main app content
+        document.querySelector('.app').style.display = 'none';
+      } else {
+        // First time - show setup
+        document.getElementById('lockSubtitle').textContent = '设置 PIN 码（4位）';
+        document.querySelector('.app').style.display = 'none';
+      }
     }
 
     function loadFromStorage() {
       const saved = localStorage.getItem('fitnessData');
       if (saved) {
         const data = JSON.parse(saved);
+        state.pin = data.pin || '';
         state.supplements = data.supplements || [];
         state.trainings = data.trainings || [];
         state.plans = data.plans || DEFAULT_PLANS;
